@@ -1,0 +1,164 @@
+---
+format: 
+  pdf:
+    fig-pos: "H"
+    tbl-cap-location: bottom
+lang: es
+echo: FALSE
+message: FALSE
+warning: FALSE
+geometry:
+  - top= 25mm
+  - left= 20mm
+  - right = 20mm
+  - bottom = 25mm
+  - heightrounded
+header-includes:
+  - \usepackage{ragged2e}
+  - \usepackage{hyperref}
+  - \usepackage{float}
+  - \floatplacement{table}{H}
+---
+
+
+```{r Carga de librerias y funciones}
+library(tidyverse)
+library(patchwork)
+library(tinytable)
+library(rstan)
+
+```
+
+```{r Configuraciones predeterminadas}
+knitr::opts_chunk$set(fig.align = "center", out.width = "70%")
+
+set.seed("2126519")
+
+theme_set(theme_bw())
+```
+
+::: {.center data-latex=""}
+
+\vspace{3cm}
+
+```{r logo facultad, echo=F, include = T, out.width= "60%"}
+# knitr::include_graphics("logounr.png")
+```
+
+\pagenumbering{gobble}
+
+\vspace{5cm}
+
+\Large
+**LICENCIATURA EN ESTADÍSTICA**
+
+\vspace{1cm}
+
+\Large
+**METRÓPOLIS-HASTINGS**
+
+
+\vspace{0.3cm}
+\large
+
+*"Markov chain Monte Carlo (MCMC) method"*
+
+\vspace{9cm}
+
+\large
+
+**Autores: Franco Santini - Nicolas Gamboa - Andrés Roncaglia**
+
+**Docentes: Ignacio Evangelista - Tomás Capretto**
+
+**2024**
+\normalsize
+\newpage
+\hypersetup{linkcolor = black}
+\tableofcontents
+
+
+\newpage
+\pagenumbering{arabic}
+
+:::
+
+\newpage
+
+
+# Introducción
+
+
+$$T(t) = T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt} \Rightarrow \\ \Rightarrow \frac{d T(t)}{d t} = -r(T_i - T_{\text{amb}}) \cdot e^{-rt} $$
+
+$$r(T_{\text{amb}} - T_{\text{amb}})\cdot e^{-rt} - r(T_i - T_{\text{amb}}) \cdot e^{-rt} = \\ = r \{T_{\text{amb}} - T_{\text{amb}} - (T_i - T_{\text{amb}})e^{-rt} \} = r \{T_{\text{amb}} - \underbrace{[T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt}]}_{T(t)} \} = r [T_{\text{amb}} - T(t)]$$
+
+```{r}
+function_T <- function(t, t_amb, t_ini, r) {
+ 
+  # t: Tiempo en horas
+  # t_amb: Temperatura ambiente
+  # t_ini: Temperatura inicial del cuerpo
+  # r: Constante
+   
+  if (any(t < 0)) {stop("El tiempo no puede ser negativo")}
+  
+  t_amb + (t_ini - t_amb)*exp(-r*t)
+  
+}
+
+r1 <- function_T(t = seq(0,60, length.out = 1000),
+           t_amb = 23,
+           t_ini = 37,
+           r = 0.1)
+
+r2 <- function_T(t = seq(0,60, length.out = 1000),
+           t_amb = 23,
+           t_ini = 37,
+           r = 0.3)
+
+
+data.frame(t = rep(seq(0,60, length.out = 1000), times = 2),
+           obs = c(r1,r2),
+           valor_r = rep(c("r = 0.1", "r = 0.3"), each = 1000)) |> 
+  ggplot() + 
+  geom_line(aes(x = t, y = obs, color = valor_r)) +
+  scale_y_continuous(breaks = seq(23,37,by=2), limits = c(23,37)) +
+  labs(x = "Tiempo (horas)")
+
+
+
+```
+
+
+r representa el peso que tiene la temperatura en la perdida de temperatura del cuerpo es mayor. r puede ser la tasa de enfriamiento
+
+r es un coeficiente de perdida de temperatura corporal (nicolas gamboa)
+
+Según lo publicado por la (La Gaceta Internacional de Ciencias Forenses)[https://www.uv.es/gicf/3R1_Pen%CC%83a_GICF_31.pdf] la tasa de enfriamiento del cuerpo varía en tres estapas, las primeras 3 o 4 horas donde la temperatura baja menos de medio grado por hora, las siguientes 6 a 10 horas donde la temperatura baja alrededor de 1 grado por hora, y a partir de las 10 horas el cuerpo desciende su temperatura entre 3/4 a 1/4 grados por hora, hasta alcanzar la temperatura ambiente. Teniendo en cuenta que r se supone constante, se puede asumir que un buen valor de r es mayor que 0,05 y menor que 0,5.
+
+
+
+$T(t) - T_{\text{amb}} = T_{\text{diff}} e^{-rt} \Rightarrow \\ ln(T(t) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-rt}) = \underbrace{ln(T_{\text{diff}})}_{\beta_0} + \underbrace{(-r)}_{\beta_1}t = \beta_0 + \beta_1 \cdot t$
+
+Donde $\beta_0$ representa el logaritmo natural de la diferencia entre la temperatura inicial del cuerpo y la temperatura ambiente y $\beta_1$ es el cambio esperado en la diferencia de temperaturas del logaritmo por cada hora.
+
+Según los (registros meteorológicos de Salsipuedes, Córdoba)[https://es.weatherspark.com/y/28135/Clima-promedio-en-Salsipuedes-Argentina-durante-todo-el-a%C3%B1o], la temperatura ambiental no suele bajar de los -2 ºC ni superar los 33 ºC, mientras que la temperatura máxima a la que puede llegar un cuerpo es 41 ºC en el caso que la persona sufra hiperpirexia^[Hiperpirexia: Temperatura corporal superior a 40 ºC en presencia de disfunción del sistema nervioso central] y la mínima 34 ºC en casos de hiportermia. 
+
+Con esto en mente, se plantean las siguientes distribuciónes a priori para los parámetros:
+
+- Diferencia de temperatura máxima: $max(T_{diff}) = max(T_i) - min(T_{\text{amb}}) = 41º - (-2º) = 43º$
+
+- Diferencia de temperatura mínima: $min(T_{diff}) = min(T_i) - max(T_{\text{amb}}) = 34º - 33º = 1º$
+
+- Logaritmo de la diferencia de temperatura promedio: $\frac{ln(max(T_{diff})) - ln(min(T_{diff}))}{2} = 1.8806$
+
+$$\beta_0 \sim Normal(\mu_0 = 1.8806, \sigma_0 = 0.6269)$$
+
+$$\beta_1 \sim Normal(\mu_1 = -0.275, \sigma_1 = 0.08)$$
+
+Rango del logaritmo de la diferencia de temperatura = $ln(41º-22º) - ln(23.7º - 22º)$
+
+Desvío máximo del logaritmo de la diferencia de temperatura = $\frac{ln(41º-22º) - ln(23.7º - 22º)}{3} = 0.8046$
+
+$$\sigma \sim Normal^+(0.8046)$$
