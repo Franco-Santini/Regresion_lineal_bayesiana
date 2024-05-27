@@ -177,87 +177,51 @@ pred_prior <- data.frame(
   prior_beta_1 = rnorm(n, 0, 0.17),
   prior_sigma = rnorm(n,0,0.8046)
   ) 
-grafico <- data.frame(t = grilla_t)
+# grafico <- data.frame(t = grilla_t)
 
-grafico <- grafico |> 
-  mutate(diff = exp(mean(pred_prior$prior_beta_0 + pred_prior$prior_beta_1* t)))
+# grafico <- grafico |> 
+  # mutate(diff = exp(mean(pred_prior$prior_beta_0 + pred_prior$prior_beta_1* t)))
 
-differ
-for (i in grilla_t) {
-  vec <- pred_prior$prior_beta_0 + pred_prior$prior_beta_1*i
+diferencias <- NULL
+for (i in seq(grilla_t)) {
+  diferencias[i] <- pred_prior$prior_beta_0 + pred_prior$prior_beta_1*grilla_t[i]
   
 }
+grafico <- data.frame(t = grilla_t,
+                      log_diff = diferencias)
 
-calc_diff_prom <- function(t, data) {
-  return(exp(data$prior_beta_0 + data$prior_beta_1 * t))
-}
-
-
-diff_prom <- sapply(grilla_t, calc_diff_prom, pred_prior)
-
-dim(diff_prom)
-
-data.frame(t = grilla_t,
-           media = colMeans(diff_prom)) |> 
+grafico |> 
   ggplot()+
-  aes(x = t, y = media)+
+  aes(x = t, y = log_diff)+
   geom_point()
 
-graf <- log_peso_prom |> `colnames<-`(grilla_t)
 
-
-
-as.data.frame(log_peso_prom) |> 
-  ggplot(aes(x = V1))+
-  geom_histogram()
-  
-pred_prior |> 
-  group_by(t) |> 
-  summarise(post = mean(pred)) |> 
-  ggplot()+
-  aes(x = t, y = post)+
-  geom_line()
-
-tiempo <- 3
-
-pred_prior$prior_beta_0 + pred_prior$prior_beta_1 * tiempo
-
-hist(pred_prior$prior_beta_0 + pred_prior$prior_beta_1 * tiempo)
-
-calc_log_diff_prom <- function(tiempo, pred_prior){
-  return(pred_prior$prior_beta_0 + pred_prior$prior_beta_1 * tiempo)
+calc_diff_prom <- function(t, data) {
+  return((data$prior_beta_0 + data$prior_beta_1 * t))
 }
 
 
+diff_prom <- sapply(grilla_t, calc_diff_prom, pred_prior) |> `colnames<-`(round(grilla_t,1))
 
+graf <- as.data.frame(diff_prom[sample(nrow(diff_prom),size = 40),])
 
+# graf_long <- cbind(
+#   pivot_longer(graf, cols = 1:100, names_to = "tiempo",values_to = "diff"),
+#   rep(1:50, each = 100)
+# )
+graf_long <- pivot_longer(graf, cols = 1:100, names_to = "tiempo",values_to = "diff") |> 
+  mutate(rep = factor(rep(1:40, each = 100)))
 
+graf_long |> 
+  mutate(tiempo = as.numeric(tiempo)) |> 
+  ggplot() + 
+  geom_line(aes(x = tiempo, y = exp(diff), group = rep), alpha = 0.2)+
+  ylim(0,40)
 
-pred_prior <- data.frame(
-  prior_beta_0 = rnorm(n, 1.8806, 0.6269),
-  prior_beta_1 = rnorm(n, 0, 0.17),
-  prior_mu = prior_beta_0 + prior_beta_1 * grilla_t,
-  prior_sigma = abs(rnorm(n,0,0.8046)),
-  
-  )
+# pred_prior[sample(nrow(pred_prior), 50),] |>
+#   ggplot()+
+#   geom_abline(aes(intercept = prior_beta_0, slope = prior_beta_1))
 
-
-pred_prior <- rnorm(n, prior_mu, prior_sigma)
-
-
-data.frame(
-  t = rep(grilla_t, times = n/length(grilla_t)),
-  diff_prior = pred_prior
-)
-
-
-datos <- data.frame(
-  diff = c(10.8, 8.5, 1.7),
-  t = c(0, 1.5, 6.45)
-)
-
-
-# prior_mu <-
 
   
 
@@ -265,10 +229,35 @@ datos <- data.frame(
 
 
 
+¿Qué son pruebas predictivas a priori?
 
 
 
+```{r}
+datos <- data.frame(
+  diff = c(10.8, 8.5, 1.7),
+  t = c(0, 1.5, 6.45)
+)
 
+
+stan_data <- list(
+    N = nrow(datos), 
+    t = datos$t,     
+    y = log(datos$diff)      
+)
+
+# ruta_modelo <- here::here(
+#   "01_modelo.stan"
+# )
+
+stan_model <- stan( 
+    file = "Stan_models/Model_1.stan", 
+    chains = 4,         
+    data = stan_data,   
+    refresh = 0,        
+    seed = 121195
+)
+```
 
 
 
