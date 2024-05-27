@@ -168,32 +168,44 @@ Los parámetros, a priori, son independientes y siguen una distribución normal.
 
 ```{r}
 n <- 40000
-largo_grilla <- 40
+largo_grilla <- 100
 
-grilla_t <- seq(0,11,length.out = 100)
+grilla_t <- seq(0,11,length.out = largo_grilla)
 
 pred_prior <- data.frame(
   prior_beta_0 = rnorm(n, 1.8806, 0.6269),
   prior_beta_1 = rnorm(n, 0, 0.17),
   prior_sigma = rnorm(n,0,0.8046)
   ) 
-#
-#   mutate(pred = rnorm(1, mean = prior_beta_0 + prior_beta_1 * t , sd = prior_sigma))
-plot(pred_prior$prior_beta_0, pred_prior$prior_beta_1)
-data.frame(
-  diff = pred_prior$prior_beta_0 + pred_prior$prior_beta_1 ) |> 
-  ggplot(aes(diff)) +
-  geom_histogram()
+grafico <- data.frame(t = grilla_t)
 
-calc_log_diff_prom <- function(t, posterior) {
-  return(exp(pred_prior$prior_beta_0 + pred_prior$prior_beta_0 * t))
+grafico <- grafico |> 
+  mutate(diff = exp(mean(pred_prior$prior_beta_0 + pred_prior$prior_beta_1* t)))
+
+differ
+for (i in grilla_t) {
+  vec <- pred_prior$prior_beta_0 + pred_prior$prior_beta_1*i
+  
+}
+
+calc_diff_prom <- function(t, data) {
+  return(exp(data$prior_beta_0 + data$prior_beta_1 * t))
 }
 
 
+diff_prom <- sapply(grilla_t, calc_diff_prom, pred_prior)
 
-log_peso_prom <- sapply(grilla_t, calc_log_diff_prom, pred_prior)
+dim(diff_prom)
 
-dim(log_peso_prom)
+data.frame(t = grilla_t,
+           media = colMeans(diff_prom)) |> 
+  ggplot()+
+  aes(x = t, y = media)+
+  geom_point()
+
+graf <- log_peso_prom |> `colnames<-`(grilla_t)
+
+
 
 as.data.frame(log_peso_prom) |> 
   ggplot(aes(x = V1))+
