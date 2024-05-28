@@ -151,7 +151,7 @@ Con esto en mente, se plantean las siguientes distribuciónes a priori para los 
 
 - Diferencia de temperatura mínima: $min(T_{diff}) = min(T_i) - max(T_{\text{amb}}) = 34º - 33º = 1º$
 
-- Logaritmo de la diferencia de temperatura promedio: $\frac{ln(max(T_{diff})) - ln(min(T_{diff}))}{2} = 1.8806$
+- Logaritmo de la diferencia de temperatura promedio: $\frac{ln(max(T_{diff})) + ln(min(T_{diff}))}{2} = 1.8806$
 
 $$\beta_0 \sim Normal(\mu_0 = 1.8806, \sigma_0 = 0.6269)$$
 
@@ -203,20 +203,19 @@ calc_diff_prom <- function(t, data) {
 
 diff_prom <- sapply(grilla_t, calc_diff_prom, pred_prior) |> `colnames<-`(round(grilla_t,1))
 
-graf <- as.data.frame(diff_prom[sample(nrow(diff_prom),size = 40),])
+graf <- as.data.frame(diff_prom[sample(nrow(diff_prom),size = 1000),])
 
 # graf_long <- cbind(
 #   pivot_longer(graf, cols = 1:100, names_to = "tiempo",values_to = "diff"),
 #   rep(1:50, each = 100)
 # )
 graf_long <- pivot_longer(graf, cols = 1:100, names_to = "tiempo",values_to = "diff") |> 
-  mutate(rep = factor(rep(1:40, each = 100)))
+  mutate(rep = factor(rep(1:1000, each = 100)))
 
 graf_long |> 
   mutate(tiempo = as.numeric(tiempo)) |> 
   ggplot() + 
-  geom_line(aes(x = tiempo, y = exp(diff), group = rep), alpha = 0.2)+
-  ylim(0,40)
+  geom_line(aes(x = tiempo, y = (diff), group = rep), alpha = 0.2)
 
 # pred_prior[sample(nrow(pred_prior), 50),] |>
 #   ggplot()+
@@ -232,6 +231,18 @@ graf_long |>
 ¿Qué son pruebas predictivas a priori?
 
 
+$$
+Y/\mu_i \ ,\ \sigma\sim N(\mu_i,\sigma^2)\\
+\mu_i = \beta_0+\beta_1t_i \\
+
+\beta_0 \sim N(1.8806, 0.6269^2) \\
+\beta_1 \sim N(0, 0.17^2)\\
+\sigma \sim N^+(0, 0.8046^2)
+
+
+$$
+
+
 
 ```{r}
 datos <- data.frame(
@@ -241,9 +252,9 @@ datos <- data.frame(
 
 
 stan_data <- list(
-    N = nrow(datos), 
-    t = datos$t,     
-    y = log(datos$diff)      
+    N = nrow(datos[1,]), 
+    t = datos[1,]$t,     
+    y = log(datos[1,]$diff)      
 )
 
 # ruta_modelo <- here::here(
