@@ -184,23 +184,6 @@ pred_prior <- data.frame(
   prior_beta_1 = rnorm(n, 0, 0.17),
   prior_sigma = rnorm(n,0,0.8046)
   ) 
-# grafico <- data.frame(t = grilla_t)
-
-# grafico <- grafico |> 
-  # mutate(diff = exp(mean(pred_prior$prior_beta_0 + pred_prior$prior_beta_1* t)))
-
-diferencias <- NULL
-for (i in seq(grilla_t)) {
-  diferencias[i] <- pred_prior$prior_beta_0 + pred_prior$prior_beta_1*grilla_t[i]
-  
-}
-grafico <- data.frame(t = grilla_t,
-                      log_diff = diferencias)
-
-grafico |> 
-  ggplot()+
-  aes(x = t, y = log_diff)+
-  geom_point()
 
 
 calc_diff_prom <- function(t, data) {
@@ -212,24 +195,42 @@ diff_prom <- sapply(grilla_t, calc_diff_prom, pred_prior) |> `colnames<-`(round(
 
 graf <- as.data.frame(diff_prom[sample(nrow(diff_prom),size = 5000),])
 
-# graf_long <- cbind(
-#   pivot_longer(graf, cols = 1:100, names_to = "tiempo",values_to = "diff"),
-#   rep(1:50, each = 100)
-# )
-graf_long <- pivot_longer(graf, cols = 1:100, names_to = "tiempo",values_to = "diff") |> 
-  mutate(rep = factor(rep(1:5000, each = 100)))
 
-graf_long |> 
-  mutate(tiempo = as.numeric(tiempo)) |> 
-  ggplot() + 
-  geom_line(aes(x = tiempo, y = (diff), group = rep), alpha = 0.2)
-
-# pred_prior[sample(nrow(pred_prior), 50),] |>
-#   ggplot()+
-#   geom_abline(aes(intercept = prior_beta_0, slope = prior_beta_1))
+# Grafico con intervalo de credibilidad ------------
 
 
-  
+mu_mean <- apply(graf, 2, mean)
+
+mu_qts <- t(apply(graf, 2, function(x) quantile(x, c(0.025, 0.975))))
+
+mu_qts2 <- t(apply(graf, 2, function(x) quantile(x, c(0.25, 0.75))))
+
+
+data_mu <- data.frame(
+  t = grilla_t, 
+  y = mu_mean,
+  lower_95 = mu_qts[, 1],
+  upper_95 = mu_qts[, 2],
+  lower_50 = mu_qts2[, 1],
+  upper_50 = mu_qts2[, 2]
+)
+
+
+ggplot(data_mu) +
+  geom_ribbon(
+    aes(t, ymin = lower_95, ymax = upper_95),
+    fill = "grey50",
+    alpha = 0.6
+  ) +
+  geom_ribbon(
+    aes(t, ymin = lower_50, ymax = upper_50),
+    fill = "grey35",
+    alpha = 0.6
+  ) +
+  geom_line(
+    aes(t, y), 
+    color = "firebrick"
+  )
 
 ```
 
@@ -264,23 +265,25 @@ stan_data <- list(
     y = as.array(log(datos[1,]$diff))      
 )
 
-# ruta_modelo <- here::here(
-#   "01_modelo.stan"
-# )
-
-stan_model <- stan( 
-    file = "Stan_models/Model_1.stan", 
-    chains = 4,         
-    data = stan_data,
-    iter = 10000,
-    refresh = 0,        
-    seed = 121195
-)
+load("Stan_models/Modelos_ejecutados")
 
 mcmc_dens_overlay(stan_model)
 
 df_posterior <- as.data.frame(extract(stan_model))
 ```
+
+
+```{r, eval=FALSE}
+stan_model <- stan(
+    file = "Stan_models/Model_1.stan",
+    chains = 4,
+    data = stan_data,
+    iter = 10000,
+    refresh = 0,
+    seed = 121195
+)
+```
+
 
 ```{r prediccion 7am 2}
 intercepto_promedio <- mean(df_posterior$beta0)
@@ -312,10 +315,7 @@ diff_prom_2 <- sapply(grilla_t, calc_diff_prom_posterior, df_posterior) |> `coln
 
 graf_2 <- as.data.frame(diff_prom_2[sample(nrow(diff_prom_2),size = 5000),])
 
-# graf_long <- cbind(
-#   pivot_longer(graf, cols = 1:100, names_to = "tiempo",values_to = "diff"),
-#   rep(1:50, each = 100)
-# )
+
 graf_long_2 <- pivot_longer(graf_2, cols = 1:100, names_to = "tiempo",values_to = "diff") |> 
   mutate(rep = factor(rep(1:5000, each = 100)))
 
@@ -323,6 +323,46 @@ graf_long_2 |>
   mutate(tiempo = as.numeric(tiempo)) |> 
   ggplot() + 
   geom_line(aes(x = tiempo, y = (diff), group = rep), alpha = 0.2)
+
+
+
+# Grafico con intervalo de credibilidad ------------
+
+
+mu_mean <- apply(graf_2, 2, mean)
+
+mu_qts <- t(apply(graf_2, 2, function(x) quantile(x, c(0.025, 0.975))))
+
+mu_qts2 <- t(apply(graf_2, 2, function(x) quantile(x, c(0.25, 0.75))))
+
+
+data_mu <- data.frame(
+  t = grilla_t, 
+  y = mu_mean,
+  lower_95 = mu_qts[, 1],
+  upper_95 = mu_qts[, 2],
+  lower_50 = mu_qts2[, 1],
+  upper_50 = mu_qts2[, 2]
+)
+
+ggplot(data_mu) +
+  geom_ribbon(
+    aes(t, ymin = lower_95, ymax = upper_95),
+    fill = "grey50",
+    alpha = 0.6
+  ) +
+  geom_ribbon(
+    aes(t, ymin = lower_50, ymax = upper_50),
+    fill = "grey35",
+    alpha = 0.6
+  ) +
+  geom_line(
+    aes(t, y), 
+    color = "firebrick"
+  )
+
+
+
 ```
 
 $$ln(37 - 22) = \beta_0 + \beta_1 \cdot t_i \Rightarrow \frac{ln(15) - \beta_0}{\beta_1}=t_i$$
@@ -335,10 +375,11 @@ stan_data_2 <- list(
     y = log(datos[1:2,]$diff)      
 )
 
-# ruta_modelo <- here::here(
-#   "01_modelo.stan"
-# )
+mcmc_dens_overlay(stan_model_2)
 
+df_posterior_2 <- as.data.frame(extract(stan_model_2))
+```
+```{r, eval=FALSE}
 stan_model_2 <- stan( 
     file = "Stan_models/Model_1.stan", 
     chains = 4,         
@@ -347,11 +388,9 @@ stan_model_2 <- stan(
     refresh = 0,        
     seed = 121195
 )
-
-mcmc_dens_overlay(stan_model_2)
-
-df_posterior_2 <- as.data.frame(extract(stan_model_2))
 ```
+
+
 
 ```{r prediccion 10am 2}
 t_dist_2 <- (log(15) - df_posterior_2$beta0)/df_posterior_2$beta1
@@ -377,10 +416,7 @@ diff_prom_3 <- sapply(grilla_t, calc_diff_prom_posterior, df_posterior_2) |> `co
 
 graf_3 <- as.data.frame(diff_prom_3[sample(nrow(diff_prom_3),size = 5000),])
 
-# graf_long <- cbind(
-#   pivot_longer(graf, cols = 1:100, names_to = "tiempo",values_to = "diff"),
-#   rep(1:50, each = 100)
-# )
+
 graf_long_3 <- pivot_longer(graf_3, cols = 1:100, names_to = "tiempo",values_to = "diff") |> 
   mutate(rep = factor(rep(1:5000, each = 100)))
 
@@ -393,6 +429,44 @@ graf_long_3 |>
   mutate(tiempo = as.numeric(tiempo)) |> 
   ggplot() + 
   geom_line(aes(x = tiempo, y = (diff), group = rep), alpha = 0.2)
+
+
+
+# Grafico con intervalo de credibilidad ------------
+
+
+mu_mean <- apply(graf_3, 2, mean)
+
+mu_qts <- t(apply(graf_3, 2, function(x) quantile(x, c(0.025, 0.975))))
+
+mu_qts2 <- t(apply(graf_3, 2, function(x) quantile(x, c(0.25, 0.75))))
+
+
+data_mu <- data.frame(
+  t = grilla_t, 
+  y = mu_mean,
+  lower_95 = mu_qts[, 1],
+  upper_95 = mu_qts[, 2],
+  lower_50 = mu_qts2[, 1],
+  upper_50 = mu_qts2[, 2]
+)
+
+ggplot(data_mu) +
+  geom_ribbon(
+    aes(t, ymin = lower_95, ymax = upper_95),
+    fill = "grey50",
+    alpha = 0.6
+  ) +
+  geom_ribbon(
+    aes(t, ymin = lower_50, ymax = upper_50),
+    fill = "grey35",
+    alpha = 0.6
+  ) +
+  geom_line(
+    aes(t, y), 
+    color = "firebrick"
+  )
+
 ```
 
 ```{r prediccion todos los datos 1}
@@ -402,10 +476,11 @@ stan_data_3 <- list(
     y = log(datos$diff)      
 )
 
-# ruta_modelo <- here::here(
-#   "01_modelo.stan"
-# )
+mcmc_dens_overlay(stan_model_3)
 
+df_posterior_3 <- as.data.frame(extract(stan_model_3))
+```
+```{r, eval=FALSE}
 stan_model_3 <- stan( 
     file = "Stan_models/Model_1.stan", 
     chains = 4,         
@@ -415,10 +490,9 @@ stan_model_3 <- stan(
     seed = 121195
 )
 
-mcmc_dens_overlay(stan_model_3)
-
-df_posterior_3 <- as.data.frame(extract(stan_model_3))
 ```
+
+
 
 ```{r prediccion todos los datos 2}
 t_dist_3 <- (log(15) - df_posterior_3$beta0)/df_posterior_3$beta1
@@ -444,10 +518,7 @@ diff_prom_4 <- sapply(grilla_t, calc_diff_prom_posterior, df_posterior_3) |> `co
 
 graf_4 <- as.data.frame(diff_prom_4[sample(nrow(diff_prom_4),size = 5000),])
 
-# graf_long <- cbind(
-#   pivot_longer(graf, cols = 1:100, names_to = "tiempo",values_to = "diff"),
-#   rep(1:50, each = 100)
-# )
+
 graf_long_4 <- pivot_longer(graf_4, cols = 1:100, names_to = "tiempo",values_to = "diff") |> 
   mutate(rep = factor(rep(1:5000, each = 100)))
 
@@ -455,5 +526,44 @@ graf_long_4 |>
   mutate(tiempo = as.numeric(tiempo)) |> 
   ggplot() + 
   geom_line(aes(x = tiempo, y = (diff), group = rep), alpha = 0.2)
+
+
+
+
+# Grafico con intervalo de credibilidad ------------
+
+
+mu_mean <- apply(graf_4, 2, mean)
+
+mu_qts <- t(apply(graf_4, 2, function(x) quantile(x, c(0.025, 0.975))))
+
+mu_qts2 <- t(apply(graf_4, 2, function(x) quantile(x, c(0.25, 0.75))))
+
+
+data_mu <- data.frame(
+  t = grilla_t, 
+  y = mu_mean,
+  lower_95 = mu_qts[, 1],
+  upper_95 = mu_qts[, 2],
+  lower_50 = mu_qts2[, 1],
+  upper_50 = mu_qts2[, 2]
+)
+
+ggplot(data_mu) +
+  geom_ribbon(
+    aes(t, ymin = lower_95, ymax = upper_95),
+    fill = "grey50",
+    alpha = 0.6
+  ) +
+  geom_ribbon(
+    aes(t, ymin = lower_50, ymax = upper_50),
+    fill = "grey35",
+    alpha = 0.6
+  ) +
+  geom_line(
+    aes(t, y), 
+    color = "firebrick"
+  )
+
 ```
 

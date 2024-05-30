@@ -6,7 +6,7 @@ data {
 
 parameters {
   real beta0;
-  real beta1;
+  real<lower=0> beta1;
   real<lower=0> sigma;
 }
 
