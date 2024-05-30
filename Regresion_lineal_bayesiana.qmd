@@ -156,7 +156,7 @@ Con esto en mente, se plantean las siguientes distribuciónes a priori para los 
 
 - Diferencia de temperatura mínima: $min(T_{diff}) = min(T_i) - T_{\text{amb}} = 23º - 22° = 1º$
 
-- Logaritmo de la diferencia de temperatura promedio: $\frac{ln(max(T_{diff}) + min(T_{diff}))}{2} = 1.4722$
+- Logaritmo de la diferencia de temperatura promedio: $\frac{ln(max(T_{diff}) + min(T_{diff}))}{2} = 2.3026$
 
 - Logaritmo de la diferencia de temperatura promedio: $\frac{ln(max(T_{diff})) + ln(min(T_{diff}))}{2} = -0.8304$
 
@@ -180,9 +180,9 @@ largo_grilla <- 100
 grilla_t <- seq(-15,11,length.out = largo_grilla)
 
 pred_prior <- data.frame(
-  prior_beta_0 = rnorm(n, 1.4722, 0.5),
-  prior_beta_1 = rnorm(n, 0, 0.17),
-  prior_sigma = rnorm(n,0,0.8046)
+  prior_beta_0 = rnorm(n, 2.2513, 0.75),
+  prior_beta_1 = rnorm(n, -0.1, 0.13),
+  prior_sigma = abs(rnorm(n,0,0.8046))
   ) 
 
 
@@ -194,6 +194,14 @@ calc_diff_prom <- function(t, data) {
 diff_prom <- sapply(grilla_t, calc_diff_prom, pred_prior) |> `colnames<-`(round(grilla_t,1))
 
 graf <- as.data.frame(diff_prom[sample(nrow(diff_prom),size = 5000),])
+
+# muestras_y <- matrix(nrow = nrow(diff_prom),
+#                      ncol = ncol(diff_prom))
+# for(i in 1:ncol(diff_prom)) {
+#   for(j in 1:nrow(diff_prom)) {
+#     muestras_y[j, i] <- rnorm(1, mean = as.numeric(diff_prom[j,i]), sd = pred_prior$prior_sigma[j])
+#   }
+# }
 
 
 # Grafico con intervalo de credibilidad ------------
@@ -375,10 +383,12 @@ stan_data_2 <- list(
     y = log(datos[1:2,]$diff)      
 )
 
+mcmc_trace(stan_model_2)
 mcmc_dens_overlay(stan_model_2)
 
 df_posterior_2 <- as.data.frame(extract(stan_model_2))
 ```
+
 ```{r, eval=FALSE}
 stan_model_2 <- stan( 
     file = "Stan_models/Model_1.stan", 
@@ -405,7 +415,7 @@ g4 <- ggplot() +
   geom_density(aes(x = t_dist_negativo_2)) +
   scale_x_continuous(limits = c(-24,1), breaks = seq(-24,0,6))
 
-mean(t_dist >= -6 & t_dist <= 0) # Con valores + y -
+mean(t_dist_2 >= -6 & t_dist_2 <= 0) # Con valores + y -
 
 
 mean(t_dist_negativo_2 >= -6 & t_dist_negativo_2 <= 0) 
@@ -480,6 +490,7 @@ mcmc_dens_overlay(stan_model_3)
 
 df_posterior_3 <- as.data.frame(extract(stan_model_3))
 ```
+
 ```{r, eval=FALSE}
 stan_model_3 <- stan( 
     file = "Stan_models/Model_1.stan", 
@@ -499,7 +510,7 @@ t_dist_3 <- (log(15) - df_posterior_3$beta0)/df_posterior_3$beta1
 
 g5 <- ggplot() + 
   geom_density(aes(x = t_dist_3)) +
-  scale_x_continuous(limits = c(-24,24))
+  scale_x_continuous(limits = c(-10,10))
 
 t_dist_negativo_3 <- t_dist_3[t_dist_3 < 0]
 
@@ -507,7 +518,7 @@ g6 <- ggplot() +
   geom_density(aes(x = t_dist_negativo_3)) +
   scale_x_continuous(limits = c(-24,1), breaks = seq(-24,0,6))
 
-mean(t_dist >= -6 & t_dist <= 0) # Con valores + y -
+mean(t_dist_3 >= -6 & t_dist_3 <= 0) # Con valores + y -
 
 
 mean(t_dist_negativo_3 >= -6 & t_dist_negativo_3 <= 0) 
@@ -566,4 +577,34 @@ ggplot(data_mu) +
   )
 
 ```
+
+```{r}
+ggplot(data_mu) +
+  geom_ribbon(
+    aes(t, ymin = exp(lower_95), ymax = exp(upper_95)),
+    fill = "grey50",
+    alpha = 0.6
+  ) +
+  geom_ribbon(
+    aes(t, ymin = exp(lower_50), ymax = exp(upper_50)),
+    fill = "grey35",
+    alpha = 0.6
+  ) +
+  geom_line(
+    aes(t, exp(y)), 
+    color = "firebrick"
+  ) +
+  scale_x_continuous(limits = c(-10, 10)) +
+  scale_y_continuous(limits = c(0, 20))
+```
+
+
+# Punto 9
+
+Modificaría algún aspecto del modelo si supiera que Sergio no gozaba de buena salud al momento de fallecer?.
+
+No modificaría en ningún aspecto el modelo el saber que Sergio no gozaba de buena salud, dado que nuestro prior abarca hasta el caso más extremo de la temperatura corporal de una persona, considerando que la temperatura del ambiente se encuentra a 22°.
+
+
+
 
