@@ -603,6 +603,15 @@ ggplot(data_mu) +
 
 Modificaría algún aspecto del modelo si supiera que Sergio no gozaba de buena salud al momento de fallecer?.
 
+Si se tuviese información que indique que Sergio no gozaba de buena salud al momento de fallecer esto podría modificar nuestra creencia a Priori ya que la velocidad de enfriamiento se retarda en casos de enfermedades febriles, intoxicaciones por nicotina, rodenticidas, entre otros y obesidad. También la perdida de calor del cuerpo puede acelerarse en personas con bajo peso, enfermedades crónicas e intoxicadas por fósforo, arsénico y alcohol.
+
+Una posible solución podría ser una variable que indique la enfermedad.
+
+Se podría entonces agregar una nueva variable que indique como se modifica la tasa de enfriamiento del cuerpo según su estado de salud previo a la muerte. Resultando el modelo:
+
+$\underbrace{ln(T_{\text{diff}})}_{\beta_0} + \underbrace{(-r)}_{\beta_1}t + (\alpha)t= \beta_0 + \beta_1 \cdot t + \beta_2 \cdot t$
+
+
 No modificaría en ningún aspecto el modelo el saber que Sergio no gozaba de buena salud, dado que nuestro prior abarca hasta el caso más extremo de la temperatura corporal de una persona, considerando que la temperatura del ambiente se encuentra a 22°.
 
 
