@@ -90,7 +90,7 @@ theme_set(theme_bw())
 # Introducción
 
 
-$$T(t) = T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt} \Rightarrow \\ \Rightarrow \frac{d T(t)}{d t} = -r(T_i - T_{\text{amb}}) \cdot e^{-rt} $$
+$$T(t) = T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt} \Rightarrow \\ \Rightarrow \frac{d T(t)}{d t} = -r(T_i - T_{\text{amb}}) \cdot e^{-rt}$$
 
 $$r(T_{\text{amb}} - T_{\text{amb}})\cdot e^{-rt} - r(T_i - T_{\text{amb}}) \cdot e^{-rt} = \\ = r \{T_{\text{amb}} - T_{\text{amb}} - (T_i - T_{\text{amb}})e^{-rt} \} = r \{T_{\text{amb}} - \underbrace{[T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt}]}_{T(t)} \} = r [T_{\text{amb}} - T(t)]$$
 
@@ -149,22 +149,72 @@ Según lo publicado por la (La Gaceta Internacional de Ciencias Forenses)[https:
 
 
   
-$$T(t) - T_{\text{amb}} = T_{\text{diff}} e^{-rt} \Rightarrow \\ ln(T(t) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-rt}) = \underbrace{ln(T_{\text{diff}})}_{\beta_0} + \underbrace{(-r)}_{\beta_1}t = \beta_0 + \beta_1 \cdot t$$
+$$T(t) - T_{\text{amb}} = T_{\text{diff}} e^{-rt} \Rightarrow \\ ln(T(t) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-rt}) = \underbrace{ln(T_{\text{diff}})}_{\beta_0} - \underbrace{r}_{\beta_1}t = \beta_0 + \beta_1 \cdot t$$
 
 Donde $\beta_0$ representa el logaritmo natural de la diferencia entre la temperatura inicial del cuerpo y la temperatura ambiente y $\beta_1$ es el cambio esperado en la diferencia de temperaturas del logaritmo por cada hora.
 
 
 Una transformación posible para este modelo es la siguiente:
 
-$$T(t-\delta) - T_{\text{amb}} = T_{\text{diff}} e^{-r(t-\delta)} \Rightarrow \\ ln(T(t-\delta) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-r(t-\delta)}) = \\ \underbrace{ln(T_{\text{diff}})}_{\beta_0} + \underbrace{(-r)}_{\beta_1}(t-\delta) = \beta_0 + \beta_1 \cdot (t-\delta) $$
+$$T(t+\delta) - T_{\text{amb}} = T_{\text{diff}} e^{-r(t+\delta)} \Rightarrow \\ ln(T(t+\delta) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-r(t+\delta)}) = \\ \underbrace{ln(T_{\text{diff}})}_{\beta_0} - \underbrace{r}_{\beta_1}(t+\delta) = \beta_0 - \beta_1 \cdot (t+\delta)$$
+El modelo que se usa para estimar la hora de muerte de Sergio resulta entonces:
 
 $$
-ln(T(t) - T_{\text{amb}}) = \underbrace{ln(T_{\text{diff}})}_{\beta_0} + \underbrace{(-r)}_{\beta_1}t = \beta_0 + \beta_1 \cdot (t)
+ln(T(t-\delta) - T_{\text{amb}}) = \beta_0 - \beta_1 \cdot (t+\delta)
 $$
 
+Donde:
+
+- $\beta_0$ es el logaritmo de la diferencia de la temperatura en la que se encontro el cuerpo y la ambiental.
+
+- $\beta_1$ es la tasa de enfriamiento del cuerpo.
+
+- $t$ es el tiempo (en horas) después de haber encontrado el cuerpo.
+
+- $\delta$ es el tiempo (en horas) que transcurrió entre la que persona murió y se encontró el cuerpo.
 
 <!-- Según los (registros meteorológicos de Salsipuedes, Córdoba)[https://es.weatherspark.com/y/28135/Clima-promedio-en-Salsipuedes-Argentina-durante-todo-el-a%C3%B1o], la temperatura ambiental no suele bajar de los -2 ºC ni superar los 33 ºC, mientras que la temperatura máxima a la que puede llegar un cuerpo es 41 ºC en el caso que la persona sufra hiperpirexia^[Hiperpirexia: Temperatura corporal superior a 40 ºC en presencia de disfunción del sistema nervioso central] y la mínima 34 ºC en casos de hiportermia.  -->
 
+
+La temperatura ambiente ese día era de 22º y la temperatura a la que fue encontrado el cuerpo de Sergio fue 32.8º, por lo tanto $\beta_0 = 2.3795$ fijo.
+
+```{r}
+r1 <- function_T(t = seq(0,60, length.out = 1000),
+           t_amb = 22,
+           t_ini = 37,
+           r = 0.1)
+
+r2 <- function_T(t = seq(0,60, length.out = 1000),
+           t_amb = 22,
+           t_ini = 37,
+           r = 0.4)
+
+r4 <- function_T(t = seq(0,60, length.out = 1000),
+           t_amb = 22,
+           t_ini = 37,
+           r = 0.175)
+r5 <- function_T(t = seq(0,60, length.out = 1000),
+           t_amb = 22,
+           t_ini = 37,
+           r = 0.625)
+
+a <- data.frame(t = rep(seq(0,60, length.out = 1000), times = 4),
+           obs = c(r1,r2,r4,r5),
+           valor_r = rep(c("r = 0.1", "r = 0.25","r = 0.35", "r = 0.4"), each = 1000))
+a |> 
+  ggplot() + 
+  geom_line(aes(x = t, y = obs, color = valor_r)) +
+  scale_y_continuous(breaks = seq(23,37,by=2), limits = c(23,37)) +
+  scale_x_continuous(breaks = seq(0,10,by=0.5), limits = c(0,10)) +
+  labs(x = "Tiempo (horas)")+
+  geom_hline(yintercept = 32.8, linetype = "dashed")+
+  geom_vline(xintercept = 0.5) +
+  geom_vline(xintercept = 2) +
+  geom_segment(aes(y = obs, yend = obs, x = t, xend = t, color = valor_r), linetype = "dashed", data = filter(a, obs == 32.84524))
+```
+
+
+Según lo investigado, la tasa de enfriamiento del cuerpo puede variar
 
 - Diferencia de temperatura máxima: $max(T_{diff}) = max(T_i) - T_{\text{amb}} = 37º - 22º = 15º$
 
@@ -195,13 +245,14 @@ grilla_t <- seq(-5, 7 ,length.out = largo_grilla)
 # rnorm(n, 2.3026, 0.2)
 beta_0 <- 2.3795461341
 pred_prior <- data.frame(
-  prior_beta_1 = -abs(rnorm(n, -0.175, 0.05)),
+  prior_beta_1 = abs(rnorm(n, 0.4, 0.075)),
+  prior_d = abs(rnorm(n, 1.25, 0.25)),
   prior_sigma = abs(rnorm(n,0,0.3))
   ) 
 
 
 calc_diff_prom <- function(t, data) {
-  return((beta_0 + data$prior_beta_1 * t))
+  return((beta_0 - data$prior_beta_1 * (t-data$prior_d)))
 }
 
 
@@ -321,50 +372,22 @@ stan_model <- stan(
 mcmc_dens_overlay(stan_model)
 
 df_posterior <- as.data.frame(extract(stan_model))
+
+mean(df_posterior$d < 1)
 ```
 
 
 ```{r prediccion 7am 2}
-# intercepto_promedio <- mean()
-pendiente_promedio <- mean(df_posterior$beta1)
-
-t_dist <- (log(15) - 2.3795461341)/df_posterior$beta1
-
-g1 <- ggplot() + 
-  geom_density(aes(x = t_dist)) +
-  scale_x_continuous(limits = c(-4,0), breaks = seq(-5,0,0.5))
-
-g2 <- ggplot() + 
-  geom_density(aes(x = t_dist_negativo)) +
-  scale_x_continuous(limits = c(-5,5), breaks = seq(-5,5,1))
-
-mean(t_dist > -2.5 & t_dist < 1.5)
-
-mean(t_dist >= -6 & t_dist <= 0) # Con valores + y -
-
-t_dist_negativo <- t_dist[t_dist < 0]
-
-mean(t_dist_negativo >= -6 & t_dist_negativo <= 0) 
 
 # Haz de rectas
 
 calc_diff_prom_posterior <- function(t, data) {
-  return((2.3795461341 + data$beta1 * t))
+  return((2.3795461341 - data$beta1 * (t-data$d)))
 }
 
 diff_prom_2 <- sapply(grilla_t, calc_diff_prom_posterior, df_posterior) |> `colnames<-`(round(grilla_t,1))
 
 graf_2 <- as.data.frame(diff_prom_2[sample(nrow(diff_prom_2),size = 1000),])
-
-
-graf_long_2 <- pivot_longer(graf_2, cols = 1:100, names_to = "tiempo",values_to = "diff") |> 
-  mutate(rep = factor(rep(1:1000, each = 100)))
-
-graf_long_2 |> 
-  mutate(tiempo = as.numeric(tiempo)) |> 
-  ggplot() + 
-  geom_line(aes(x = tiempo, y = exp(diff), group = rep), alpha = 0.2)+
-  scale_y_continuous(limits = c(0,20))
 
 
 
@@ -401,7 +424,8 @@ ggplot(data_mu) +
   geom_line(
     aes(t, y), 
     color = "firebrick"
-  ) + geom_point(
+  ) + 
+  geom_point(
     data = datos,mapping = aes(x = t, y = log(diff)), size = 0.1
   )
 
@@ -434,49 +458,18 @@ mcmc_trace(stan_model_2)
 mcmc_dens_overlay(stan_model_2)
 
 df_posterior_2 <- as.data.frame(extract(stan_model_2))
+
+mean(df_posterior_2$d < 1)
 ```
 
 
 
 ```{r prediccion 10am 2}
-t_dist_2 <- (log(15) - df_posterior_2$beta0)/df_posterior_2$beta1
-
-g3 <- ggplot() + 
-  geom_density(aes(x = t_dist_2)) +
-  scale_x_continuous(limits = c(-24,24))
-
-t_dist_negativo_2 <- t_dist_2[t_dist_2 < 0]
-
-g4 <- ggplot() + 
-  geom_density(aes(x = t_dist_negativo_2)) +
-  scale_x_continuous(limits = c(-24,1), breaks = seq(-24,0,6))
-
-mean(t_dist_2 >= -2 & t_dist_2 <= 0) # Con valores + y -
-
-
-mean(t_dist_negativo_2 >= -6 & t_dist_negativo_2 <= 0) 
-
 # Haz de rectas
 
 diff_prom_3 <- sapply(grilla_t, calc_diff_prom_posterior, df_posterior_2) |> `colnames<-`(round(grilla_t,1))
 
 graf_3 <- as.data.frame(diff_prom_3[sample(nrow(diff_prom_3),size = 1000),])
-
-
-graf_long_3 <- pivot_longer(graf_3, cols = 1:100, names_to = "tiempo",values_to = "diff") |> 
-  mutate(rep = factor(rep(1:1000, each = 100)))
-
-graf_long_2 |> 
-  mutate(tiempo = as.numeric(tiempo)) |> 
-  ggplot() + 
-  geom_line(aes(x = tiempo, y = (diff), group = rep), alpha = 0.2)
-
-graf_long_3 |> 
-  mutate(tiempo = as.numeric(tiempo)) |> 
-  ggplot() + 
-  geom_line(aes(x = tiempo, y = (diff), group = rep), alpha = 0.2)
-
-
 
 # Grafico con intervalo de credibilidad ------------
 

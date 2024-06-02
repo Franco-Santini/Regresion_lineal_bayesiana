@@ -6,13 +6,15 @@ data {
 
 parameters {
   // real beta0;
-  real<upper=0> beta1;
+  real<lower=0> beta1;
+  real<lower=0> d;
   real<lower=0> sigma;
 }
 
 model {
   // beta0 ~ normal(2.3026, 0.3);
-  beta1 ~ normal(-0.175, 0.05);
+  beta1 ~ normal(0.4, 0.075);
+  d ~ normal(1.25, 0.25);
   sigma ~ normal(0, 0.3); //El valor anterior era 0.8046. una baaanda
-  y ~ normal(2.3795461341 + beta1 * t, sigma);
+  y ~ normal(2.3795461341 - beta1 * (t-d), sigma);
 }
