@@ -5,14 +5,14 @@ data {
 }
 
 parameters {
-  real beta0;
-  real beta1;
+  // real beta0;
+  real<upper=0> beta1;
   real<lower=0> sigma;
 }
 
 model {
-  beta0 ~ normal(2.2513, 0.75);
-  beta1 ~ normal(-0.275, 0.0917);
-  sigma ~ normal(0, 0.8046);
-  y ~ normal(beta0 + beta1 * t, sigma);
+  // beta0 ~ normal(2.3026, 0.3);
+  beta1 ~ normal(-0.175, 0.05);
+  sigma ~ normal(0, 0.3); //El valor anterior era 0.8046. una baaanda
+  y ~ normal(2.3795461341 + beta1 * t, sigma);
 }
