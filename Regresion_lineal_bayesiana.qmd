@@ -156,16 +156,18 @@ Donde $\beta_0$ representa el logaritmo natural de la diferencia entre la temper
 
 Una transformación posible para este modelo es la siguiente:
 
+Para poder interpretar t como el tiempo después de haber encontrado el cuerpo, hacemos una traslación utilizando un nuevo parámetro $\delta$.
+
 $$T(t+\delta) - T_{\text{amb}} = T_{\text{diff}} e^{-r(t+\delta)} \Rightarrow \\ ln(T(t+\delta) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-r(t+\delta)}) = \\ \underbrace{ln(T_{\text{diff}})}_{\beta_0} - \underbrace{r}_{\beta_1}(t+\delta) = \beta_0 - \beta_1 \cdot (t+\delta)$$
 El modelo que se usa para estimar la hora de muerte de Sergio resulta entonces:
 
 $$
-ln(T(t-\delta) - T_{\text{amb}}) = \beta_0 - \beta_1 \cdot (t+\delta)
+ln(T(t+\delta) - T_{\text{amb}}) = \beta_0 - \beta_1 \cdot (t+\delta)
 $$
 
 Donde:
 
-- $\beta_0$ es el logaritmo de la diferencia de la temperatura en la que se encontro el cuerpo y la ambiental.
+- $\beta_0$ es el logaritmo de la diferencia entre la temperatura inicial del cuerpo y la temperatura ambiente.
 
 - $\beta_1$ es la tasa de enfriamiento del cuerpo.
 
@@ -252,7 +254,7 @@ pred_prior <- data.frame(
 
 
 calc_diff_prom <- function(t, data) {
-  return((beta_0 - data$prior_beta_1 * (t-data$prior_d)))
+  return((beta_0 - data$prior_beta_1 * (t+data$prior_d)))
 }
 
 
