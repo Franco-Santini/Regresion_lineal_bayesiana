@@ -13,8 +13,8 @@ parameters {
 
 model {
   // beta0 ~ normal(2.3026, 0.3);
-  beta1 ~ normal(0.4, 0.075);
-  d ~ normal(1.25, 0.25);
-  sigma ~ normal(0, 0.2); //El valor anterior era 0.8046. una baaanda
-  y ~ normal(2.3795461341 - beta1 * (t+d), sigma);
+  beta1 ~ normal(0.16, 0.075);
+  d ~ uniform(1.5,2.5);
+  sigma ~ normal(0, 0.3); //El valor anterior era 0.8046. una baaanda
+  y ~ normal(2.7081 - beta1 * (t+d), sigma);
 }

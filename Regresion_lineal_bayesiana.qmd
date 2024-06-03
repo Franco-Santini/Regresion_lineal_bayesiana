@@ -56,13 +56,13 @@ theme_set(theme_bw())
 \vspace{1cm}
 
 \Large
-**METRÓPOLIS-HASTINGS**
+**UNA MASACRE ESTADÍSTICA**
 
 
 \vspace{0.3cm}
 \large
 
-*"Markov chain Monte Carlo (MCMC) method"*
+*Regresión Lineal Bayesiana*
 
 \vspace{9cm}
 
@@ -87,11 +87,55 @@ theme_set(theme_bw())
 \newpage
 
 
+
 # Introducción
+
+Siguiendo los acontecimientos de la muerte de sergio, una templada madrugada de miércoles en Salsipuedes, la policía forense busca determinar a qué hora murió. El encargado de esto es Guido, un estudiante de estadística fascinado por poder al fin aplicar sus conocimientos estadísticos en un caso de criminalística.
+
+Los datos que la policía foresense propició a Guido son los siguientes:
+
+```{mermaid}
+timeline
+    title Acontecimientos del día del crimen
+    05.33hs : Llamado de Lidia Benegas al 911
+    05.52hs : Llega el móvil policial a la escena. Sergio es encontrado en el suelo sobre un charco de sangre
+    06.45hs : La policía científica determinó que sergio había fallecido, y presentaba una temperatura corporal de 32.8°C
+    08.15hs : El cuerpo de Sergio es colocado en la bolsa de óbito para trasladarlo a la morgue. Su temperatura es de 30.5°C
+    09.55hs : El cuerpo llega a la morgue
+    13.30hs : Comienza la autopsia, la temperatura del cadaver es de 23.7°C
+    16.10hs : Finaliza la autopsia. Se determina que Sergio falleció desangrado producto de una herida punzante en el brazo.
+```
+
+# Metodología
+
+En la medicina forense existen muchas maneras de estimar la hora de la muerte. Entre ellas, una de las más utilizadas es el estudio de la temperatura corporal, la cual es posible estimar.
+
+Se sabe que la temperatura del cuerpo de Sergio satisface la siguiente ley:
+
+$$
+\frac{d T(t)}{d t} = r[T_{amb}-T(t)]
+$$
+Donde $T_amb$ es la temperatura ambiente en donde se encuentra el cuerpo, en este caso 22°C, $r$ es una constante que determina el ritmo de enfriamiento y $T(t)$ es la función que describe la temperatura del cadaver en función del tiempo después de la muerte.
+
+Una posible función $T(t)$ que satisface esta ecuación diferencial es la siguiente:
+
 
 $$T(t) = T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt} \Rightarrow \\ \Rightarrow \frac{d T(t)}{d t} = -r(T_i - T_{\text{amb}}) \cdot e^{-rt}$$
 
-$$r(T_{\text{amb}} - T_{\text{amb}})\cdot e^{-rt} - r(T_i - T_{\text{amb}}) \cdot e^{-rt} = \\ = r \{T_{\text{amb}} - T_{\text{amb}} - (T_i - T_{\text{amb}})e^{-rt} \} = r \{T_{\text{amb}} - \underbrace{[T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt}]}_{T(t)} \} = r [T_{\text{amb}} - T(t)]$$
+$$
+
+r(T_{\text{amb}} - T_{\text{amb}})\cdot e^{-rt} - r(T_i - T_{\text{amb}}) \cdot e^{-rt} = 
+$$
+$$
+= r \{T_{\text{amb}} - T_{\text{amb}} - (T_i - T_{\text{amb}})e^{-rt} \} = 
+$$
+$$
+r \{T_{\text{amb}} - \underbrace{[T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt}]}_{T(t)} \} = r [T_{\text{amb}} - T(t)]
+
+$$
+
+Algunos valores posibles para la constante de enfriamiento r son:
+
 
 ```{r}
 function_T <- function(t, t_amb, t_ini, r) {
@@ -107,55 +151,67 @@ function_T <- function(t, t_amb, t_ini, r) {
   
 }
 
+# Suponiendo un delta con media de 2 horas 15 minutos 
+# y un desvío estandar de 20 minutos(A los sumo puede variar 1 hora mas o menos)
 r1 <- function_T(t = seq(0,60, length.out = 1000),
-           t_amb = 22,
+           t_amb = 23,
            t_ini = 37,
-           r = 0.1)
+           r = .3)
+
+# r2 <- function_T(t = seq(0,60, length.out = 1000),
+#            t_amb = 22,
+#            t_ini = 37,
+#            r = 0.2)
 
 r2 <- function_T(t = seq(0,60, length.out = 1000),
-           t_amb = 22,
+           t_amb = 23,
            t_ini = 37,
-           r = 0.25)
-
-r4 <- function_T(t = seq(0,60, length.out = 1000),
-           t_amb = 22,
-           t_ini = 37,
-           r = 0.35)
-r5 <- function_T(t = seq(0,60, length.out = 1000),
-           t_amb = 22,
-           t_ini = 37,
-           r = 0.4)
-
-data.frame(t = rep(seq(0,60, length.out = 1000), times = 4),
-           obs = c(r1,r2,r4,r5),
-           valor_r = rep(c("r = 0.1", "r = 0.25","r = 0.35", "r = 0.4"), each = 1000)) |> 
-  ggplot() + 
-  geom_line(aes(x = t, y = obs, color = valor_r)) +
-  scale_y_continuous(breaks = seq(23,37,by=2), limits = c(23,37)) +
-  scale_x_continuous(breaks = seq(0,10,by=0.5), limits = c(0,10)) +
-  labs(x = "Tiempo (horas)")+
-  geom_hline(yintercept = 32.8)+
-  geom_vline(xintercept = 1.25)
-
+           r = .1)
+# r5 <- function_T(t = seq(0,60, length.out = 1000),
+#            t_amb = 22,
+#            t_ini = 37,
+#            r = 0.16)
 ```
 
 
-r representa el peso que tiene la temperatura en la perdida de temperatura del cuerpo es mayor. r puede ser la tasa de enfriamiento
+```{r}
+#| fig-cap: "Temperatura del cuerpo según tiempo post-mortem\nTemperatura ambiente: 23°C"
+#| 
+#| 
 
-r es un coeficiente de perdida de temperatura corporal (nicolas gamboa)
 
-Según lo publicado por la (La Gaceta Internacional de Ciencias Forenses)[https://www.uv.es/gicf/3R1_Pen%CC%83a_GICF_31.pdf] la tasa de enfriamiento del cuerpo varía en tres estapas, las primeras 3 o 4 horas donde la temperatura baja menos de medio grado por hora, las siguientes 6 a 10 horas donde la temperatura baja alrededor de 1 grado por hora, y a partir de las 10 horas el cuerpo desciende su temperatura entre 3/4 a 1/4 grados por hora, hasta alcanzar la temperatura ambiente. Teniendo en cuenta que r se supone constante, se puede asumir que un buen valor de r es mayor que 0,05 y menor que 0,5.
+data.frame(t = rep(seq(0,60, length.out = 1000), times = 2),
+           obs = c(r1,r2),
+           valor_r = rep(c("0.1","0.3"), each = 1000)) |> 
+  ggplot() + 
+  geom_line(aes(x = t, y = obs, color = valor_r)) +
+  scale_y_continuous(breaks = seq(23,37,by=2), limits = c(23,37)) +
+  scale_x_continuous(breaks = seq(0,24,by=2), limits = c(0,24)) +
+  labs(x = "Tiempo (horas)", color = "r")
+
+
+```
+
+Al ser su primer caso oficial, Guido se sintió un poco desconcertado por no saber a qué hora podría haber ocurrido la tragedia.
+
+Según lo publicado por la (La Gaceta Internacional de Ciencias Forenses)[https://www.uv.es/gicf/3R1_Pen%CC%83a_GICF_31.pdf] la tasa de enfriamiento del cuerpo varía en tres estapas, las primeras 3 o 4 horas donde la temperatura baja menos de medio grado por hora, las siguientes 6 a 10 horas donde la temperatura baja alrededor de 1 grado por hora, y a partir de las 10 horas el cuerpo desciende su temperatura entre 3/4 a 1/4 grados por hora, hasta alcanzar la temperatura ambiente. Teniendo en cuenta que r se supone constante, se puede asumir que un buen valor de r es mayor que 0,1 y menor que 0,45.
+
+Con el objetivo de finalmente, después de tanto esfuerzo, estimar la hora de la muerte de Sergio, Guido decide utilizar un enfoque Bayesiano, planteando el siguiente modelo lineal.
 
 
   
-$$T(t) - T_{\text{amb}} = T_{\text{diff}} e^{-rt} \Rightarrow \\ ln(T(t) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-rt}) = \underbrace{ln(T_{\text{diff}})}_{\beta_0} - \underbrace{r}_{\beta_1}t = \beta_0 + \beta_1 \cdot t$$
+$$
+
+T(t) - T_{\text{amb}} = T_{\text{diff}} e^{-rt} \Rightarrow \\ ln(T(t) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-rt}) = \underbrace{ln(T_{\text{diff}})}_{\beta_0} - \underbrace{r}_{\beta_1}t = \beta_0 + \beta_1 \cdot t
+
+$$
 
 Donde $\beta_0$ representa el logaritmo natural de la diferencia entre la temperatura inicial del cuerpo y la temperatura ambiente y $\beta_1$ es el cambio esperado en la diferencia de temperaturas del logaritmo por cada hora.
 
 
 Una transformación posible para este modelo es la siguiente:
 
-Para poder interpretar t como el tiempo después de haber encontrado el cuerpo, hacemos una traslación utilizando un nuevo parámetro $\delta$.
+Para poder interpretar t como el tiempo después de haber encontrado el cuerpo, se realiza una traslación utilizando un nuevo parámetro $\delta$.
 
 $$T(t+\delta) - T_{\text{amb}} = T_{\text{diff}} e^{-r(t+\delta)} \Rightarrow \\ ln(T(t+\delta) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-r(t+\delta)}) = \\ \underbrace{ln(T_{\text{diff}})}_{\beta_0} - \underbrace{r}_{\beta_1}(t+\delta) = \beta_0 - \beta_1 \cdot (t+\delta)$$
 El modelo que se usa para estimar la hora de muerte de Sergio resulta entonces:
@@ -166,43 +222,51 @@ $$
 
 Donde:
 
-- $\beta_0$ es el logaritmo de la diferencia entre la temperatura inicial del cuerpo y la temperatura ambiente.
+-   $\delta$ es el tiempo (en horas) que transcurrió entre la que persona murió y se encontró el cuerpo.
 
-- $\beta_1$ es la tasa de enfriamiento del cuerpo.
+-   Los demás parámetros conservan su significado.
 
-- $t$ es el tiempo (en horas) después de haber encontrado el cuerpo.
-
-- $\delta$ es el tiempo (en horas) que transcurrió entre la que persona murió y se encontró el cuerpo.
-
-<!-- Según los (registros meteorológicos de Salsipuedes, Córdoba)[https://es.weatherspark.com/y/28135/Clima-promedio-en-Salsipuedes-Argentina-durante-todo-el-a%C3%B1o], la temperatura ambiental no suele bajar de los -2 ºC ni superar los 33 ºC, mientras que la temperatura máxima a la que puede llegar un cuerpo es 41 ºC en el caso que la persona sufra hiperpirexia^[Hiperpirexia: Temperatura corporal superior a 40 ºC en presencia de disfunción del sistema nervioso central] y la mínima 34 ºC en casos de hiportermia.  -->
+Guido recuerda haber mirado el pronóstico del tiempo el día de la muerte de Sergio y recuerda que anunciaban una temperatura ambiente de 22ºC. Por otro lado, dado que la temperatura corporal de una persona sana ronda los 37°C, consideró esta la temperatura inicial del cuerpo de Sergio. 
 
 
-La temperatura ambiente ese día era de 22º y la temperatura a la que fue encontrado el cuerpo de Sergio fue 32.8º, por lo tanto $\beta_0 = 2.3795$ fijo.
+$$
+ln(T(0)-T_{amb}) = \beta_0 - \beta_1 \cdot (0)
+$$
+$$
+\beta_0 = ln(37-22) =ln(15)=  2.7081
+
+$$
+Al ser un enfoque bayesiano, Guido debe pensar una distribución a priori para los parámetros $\delta$ y $\beta_1$.
+
+En principio, dado que el cuerpo fue encontrado con una temperatura corporal de 32.8°C, y sabiendo que Sergio murió desangrado, lo cual acelera considerablemente el descenso de la temperatura, cree que debe haber muerto hace aproximadamente 2 horas, aunque no está para nada seguro, por lo que utilizará una distribución uniforme, que irá entre 1 hora y media y 2 horas y media. 
+
+Con respecto al parámetro $\beta_1$, y considerando la hora a la que estima que murió Sergio y la temperatura a la que fue encontrado, observa lo siguiente.
+
 
 ```{r}
 r1 <- function_T(t = seq(0,60, length.out = 1000),
            t_amb = 22,
            t_ini = 37,
-           r = 0.1)
+           r = 0.1375)
 
 r2 <- function_T(t = seq(0,60, length.out = 1000),
            t_amb = 22,
            t_ini = 37,
-           r = 0.4)
+           r = 0.16)
 
 r4 <- function_T(t = seq(0,60, length.out = 1000),
            t_amb = 22,
            t_ini = 37,
-           r = 0.175)
-r5 <- function_T(t = seq(0,60, length.out = 1000),
-           t_amb = 22,
-           t_ini = 37,
-           r = 0.625)
+           r = 0.1825)
 
-a <- data.frame(t = rep(seq(0,60, length.out = 1000), times = 4),
-           obs = c(r1,r2,r4,r5),
-           valor_r = rep(c("r = 0.1", "r = 0.25","r = 0.35", "r = 0.4"), each = 1000))
-a |> 
+```
+
+
+```{r}
+#| fig-cap: "Temperatura del cuerpo según tiempo post-mortem\nTemperatura ambiente: 22°C"
+data.frame(t = rep(seq(0,60, length.out = 1000), times = 3),
+           obs = c(r1,r2,r4),
+           valor_r = rep(c("r = 0.14", "r = 0.16","r = 0.18"), each = 1000)) |> 
   ggplot() + 
   geom_line(aes(x = t, y = obs, color = valor_r)) +
   scale_y_continuous(breaks = seq(23,37,by=2), limits = c(23,37)) +
@@ -210,65 +274,65 @@ a |>
   labs(x = "Tiempo (horas)")+
   geom_hline(yintercept = 32.8, linetype = "dashed")+
   # geom_vline(xintercept = 0.5) +
-  geom_vline(xintercept = 2.5) +
-  geom_segment(aes(y = obs, yend = obs, x = t, xend = t, color = valor_r), linetype = "dashed", data = filter(a, obs == 32.84524))
+  geom_vline(xintercept = 2, linetype = "dashed")
 ```
 
+En base a esto, tomará valores similares a los graficados para la distribución de $\beta_1$, considerando una distribución normal.
 
-Según lo investigado, la tasa de enfriamiento del cuerpo puede variar
+De manera un poco más formal, el modelo que planteado por Guido es el siguiente:
 
-- Diferencia de temperatura máxima: $max(T_{diff}) = max(T_i) - T_{\text{amb}} = 37º - 22º = 15º$
+$$
 
-- Diferencia de temperatura mínima: $min(T_{diff}) = min(T_i) - T_{\text{amb}} = 27º - 22° = 5º$
+ln(Y)/\mu_i,\ \sigma \sim \mathcal{N}(\mu_i,\ \sigma) \\
 
-- Logaritmo de la diferencia de temperatura promedio: $ln\left(\frac{max(T_{diff}) + min(T_{diff})}{2}\right) = 2.3026$
+\mu_i=\beta_0 + \beta_1\cdot (t+\delta) \\
 
-<!-- - Logaritmo de la diferencia de temperatura promedio: $\frac{ln(max(T_{diff})) + ln(min(T_{diff}))}{2} = -0.8304$ -->
+\beta_0 =2.7081 \\
+\beta_1 \sim \mathcal{N^+}(0.16,\ 0.075) \\
 
-$$\beta_0 \sim Normal(\mu_0 = 1.8806, \sigma_0 = 0.6269)$$
+\delta \sim \mathcal{U}(1.5, \ 2.5) \\
+\sigma \sim \mathcal{N^+}(0,\ 0.2 )
 
-$$\beta_1 \sim Normal(\mu_1 = 0, \sigma_1 = 0.17)$$
+$$
 
-Rango del logaritmo de la diferencia de temperatura = $ln(41º-22º) - ln(23.7º - 22º)$
+Los parámetros, a priori, son independientes y siguen las distribuciones mencionadas.
 
-Desvío máximo del logaritmo de la diferencia de temperatura = $\frac{ln(41º-22º) - ln(23.7º - 22º)}{3} = 0.8046$
+El interés se centra principalmente en el parámetro $\delta$
 
-$$\sigma \sim Normal^+(0.8046)$$
+# Resultados
 
-Los parámetros, a priori, son independientes y siguen una distribución normal.
+El objetivo de Guido es estimar la hora de la muerte y para hacerlo usará toda la información que tenga a su disposición. Pero antes de esto quiere confirmar que sus creencias iniciales tienen sentido, por lo que decide realizar pruebas predictivas a priori.
 
+## Pruebas predictivas a priori
 
 ```{r}
+
+datos <- data.frame(
+  t = c(0,1.5, 6.75),
+  diff = c(10.8,8.5, 1.7)
+)
+
 n <- 40000
 largo_grilla <- 100
 
-grilla_t <- seq(-5, 7 ,length.out = largo_grilla)
-# rnorm(n, 2.3026, 0.2)
+grilla_t <- seq(-4, 7 ,length.out = largo_grilla)
+
 beta_0 <- 2.7081
 pred_prior <- data.frame(
-  prior_beta_1 = abs(rnorm(n, 0.15, 0.085)),
-  prior_d = abs(rnorm(n, 2.5, 1/3)),
-  prior_sigma = abs(rnorm(n,0,0.3))
+  prior_beta_1 = abs(rnorm(n, 0.16, 0.075)),
+  prior_d = abs(runif(n, min = 1.5, max = 2.5)),
+  prior_sigma = abs(rnorm(n,0,0.05))
   ) 
 
 
 calc_diff_prom <- function(t, data) {
-  return((beta_0 - data$prior_beta_1 * (t+data$prior_d)))
+  return(beta_0 - data$prior_beta_1 * (t+data$prior_d))
 }
 
 
 diff_prom <- sapply(grilla_t, calc_diff_prom, pred_prior) |> `colnames<-`(round(grilla_t,1))
 
-graf <- as.data.frame(diff_prom[sample(nrow(diff_prom),size = 5000),])
-
-# muestras_y <- matrix(nrow = nrow(diff_prom),
-#                      ncol = ncol(diff_prom))
-# for(i in 1:ncol(diff_prom)) {
-#   for(j in 1:nrow(diff_prom)) {
-#     muestras_y[j, i] <- rnorm(1, mean = as.numeric(diff_prom[j,i]), sd = pred_prior$prior_sigma[j])
-#   }
-# }
-
+graf <- as.data.frame(diff_prom)
 
 # Grafico con intervalo de credibilidad ------------
 
@@ -288,7 +352,11 @@ data_mu <- data.frame(
   lower_50 = mu_qts2[, 1],
   upper_50 = mu_qts2[, 2]
 )
+```
 
+
+```{r}
+#| fig-cap: "Distribución a Priori del logaritmo de la diferencia de temperatura."
 
 ggplot(data_mu) +
   geom_ribbon(
@@ -304,58 +372,49 @@ ggplot(data_mu) +
   geom_line(
     aes(t, y), 
     color = "firebrick"
-  ) + geom_point(
-    data = datos,mapping = aes(x = t, y = log(diff)), size = 0.1
-  )
-
-
-t_dist <- (log(15) - 2.3795461341)/pred_prior$prior_beta_1
-
-g1 <- ggplot() + 
-  geom_density(aes(x = t_dist)) +
-  scale_x_continuous(limits = c(-4,0), breaks = seq(-5,0,0.5))
-
-g2 <- ggplot() + 
-  geom_density(aes(x = t_dist_negativo)) +
-  scale_x_continuous(limits = c(-5,5), breaks = seq(-5,5,1))
-
-mean(t_dist > -2.5 & t_dist < 1.5)
-
-mean(t_dist >= -6 & t_dist <= 0) # Con valores + y -
+  ) 
+# +
+#   geom_point(data = datos,mapping = aes(x = t, y = log(diff)))
 
 ```
 
+En un principio, el prior de Guido parece tener sentido.
+
+Busca un intervalo de tiempo en el que pueda decir con 90% de certeza que Sergio murió dentro de ese rango horario.
+
+```{r}
+
+predictiva_prior <- quantile(pred_prior$prior_d,probs = c(0.05, 0.95))
+
+# 1.55
+# 2.44
+```
+
+A priori Guido concluye con una credibilidad del 90% que sergio murió entre las 4.19hs y las 5.12hs.
 
 
-¿Qué son pruebas predictivas a priori?
+## Pruebas predictivas a Posteriori
 
+Ahora sí, finalmente Guido utilizará los datos provistos para estimar la hora de la muerte, pero con el objetivo de desafiarse a sí mismo decide hacerlo de manera secuencial, para ver como los datos van afectando sus estimaciones.
 
-$$
-Y/\mu_i \ ,\ \sigma\sim N(\mu_i,\sigma^2)\\
-\mu_i = \beta_0+\beta_1t_i \\
+Después de que la computadora de bajos recursos del departamento de la Policía Científica estuviera encendida durante días, Guido consiguió los siguientes resultados.
 
-\beta_0 \sim N(1.8806, 0.6269^2) \\
-\beta_1 \sim N(0, 0.17^2)\\
-\sigma \sim N^+(0, 0.8046^2)
+Los datos disponibles sin los siguientes.
 
-
-$$
-
+```{r}
+datos |> 
+  mutate(log_diff = round(log(diff), 3)) |> 
+  `colnames<-`(c("$Tiempo$", "$Temp_{diff}$", "$ln(Temp_{diff})$")) |>
+  knitr::kable(format = "pipe")
+```
 
 
 ```{r prediccion 7am}
-datos <- data.frame(
-  diff = c(8.5, 1.7),
-  t = c(1.5, 6.75)
-)
-
-
 stan_data <- list(
     N = nrow(datos[1,]), 
     t = as.array(datos[1,]$t),     
     y = as.array(log(datos[1,]$diff))      
 )
-
 # load("Stan_models/Modelos_ejecutados")
 
 ```
@@ -367,28 +426,39 @@ stan_model <- stan(
     chains = 4,
     data = stan_data,
     iter = 10000,
+    # warmup = 2500,
     refresh = 0,
-    seed = 121195
-)
+    seed = 90502, init = list(
+      list(beta1 = 0.13, d = 2),
+      list(beta1 = 0.15, d = 2),
+      list(beta1 = 0.17, d = 2),
+      list(beta1 = 0.19, d = 2)
+      )
+    )
+# ?stan
+```
+
+
+```{r, eval=FALSE}
 mcmc_dens_overlay(stan_model)
+mcmc_trace(stan_model)
 
 df_posterior <- as.data.frame(extract(stan_model))
 
-mean(df_posterior$d < 1)
 ```
 
 
 ```{r prediccion 7am 2}
 
-# Haz de rectas
+# Bandas
 
 calc_diff_prom_posterior <- function(t, data) {
-  return((2.3795461341 - data$beta1 * (t-data$d)))
+  return((2.7081 - data$beta1 * (t+data$d)))
 }
 
 diff_prom_2 <- sapply(grilla_t, calc_diff_prom_posterior, df_posterior) |> `colnames<-`(round(grilla_t,1))
 
-graf_2 <- as.data.frame(diff_prom_2[sample(nrow(diff_prom_2),size = 1000),])
+graf_2 <- as.data.frame(diff_prom_2)
 
 
 
@@ -453,26 +523,33 @@ stan_model_2 <- stan(
     data = stan_data_2,
     iter = 10000,
     refresh = 0,        
-    seed = 121195
+    seed = 90502
 )
+
+# save(file = "Stan_models/Resultados_modelos.RData")
+
+
 mcmc_trace(stan_model_2)
 mcmc_dens_overlay(stan_model_2)
 
 df_posterior_2 <- as.data.frame(extract(stan_model_2))
 
-mean(df_posterior_2$d < 1)
+mean(df_posterior_2$d < 2+(2/6) & df_posterior_2$d > 2-(2/6))
+
+# stan_model
+# stan_model_2
+# stan_model_3
 ```
 
 
 
 ```{r prediccion 10am 2}
-# Haz de rectas
+# Grafico con intervalo de credibilidad ------------
 
 diff_prom_3 <- sapply(grilla_t, calc_diff_prom_posterior, df_posterior_2) |> `colnames<-`(round(grilla_t,1))
 
-graf_3 <- as.data.frame(diff_prom_3[sample(nrow(diff_prom_3),size = 1000),])
+graf_3 <- as.data.frame(diff_prom_3)
 
-# Grafico con intervalo de credibilidad ------------
 
 
 mu_mean <- apply(graf_3, 2, mean)
@@ -528,51 +605,25 @@ stan_model_3 <- stan(
     data = stan_data_3,
     iter = 10000,
     refresh = 0,        
-    seed = 121195
+    seed = 90502
 )
 mcmc_dens_overlay(stan_model_3)
 
+mcmc_trace(stan_model)
+mcmc_trace(stan_model_2)
+mcmc_trace(stan_model_3)
+
 df_posterior_3 <- as.data.frame(extract(stan_model_3))
+quantile(x = pred_prior$prior_d)
+quantile(x = df_posterior$d)
+quantile(x = df_posterior_2$d)
+quantile(x = df_posterior_3$d)
 
 ```
 
 
 
 ```{r prediccion todos los datos 2}
-t_dist_3 <- (log(15) - 2.3795461341)/df_posterior_3$beta1
-
-g5 <- ggplot() + 
-  geom_density(aes(x = t_dist_3)) +
-  scale_x_continuous(limits = c(-5,0))
-
-t_dist_negativo_3 <- t_dist_3[t_dist_3 < 0]
-
-g6 <- ggplot() + 
-  geom_density(aes(x = t_dist_negativo_3)) +
-  scale_x_continuous(limits = c(-5,5), breaks = seq(-5,5,1))
-
-mean(t_dist_3 >= -2 & t_dist_3 <= 0) # Con valores + y -
-
-
-mean(t_dist_negativo_3 >= -6 & t_dist_negativo_3 <= 0) 
-
-# Haz de rectas
-
-diff_prom_4 <- sapply(grilla_t, calc_diff_prom_posterior, df_posterior_3) |> `colnames<-`(round(grilla_t,1))
-
-graf_4 <- as.data.frame(diff_prom_4[sample(nrow(diff_prom_4),size = 5000),])
-
-
-graf_long_4 <- pivot_longer(graf_4, cols = 1:100, names_to = "tiempo",values_to = "diff") |> 
-  mutate(rep = factor(rep(1:5000, each = 100)))
-
-graf_long_4 |> 
-  mutate(tiempo = as.numeric(tiempo)) |> 
-  ggplot() + 
-  geom_line(aes(x = tiempo, y = (diff), group = rep), alpha = 0.2)
-
-
-
 
 # Grafico con intervalo de credibilidad ------------
 
