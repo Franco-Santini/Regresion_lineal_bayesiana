@@ -5,6 +5,7 @@ format:
     tbl-cap-location: bottom
 lang: es
 echo: FALSE
+# eval: FALSE
 message: FALSE
 warning: FALSE
 geometry:
@@ -120,18 +121,12 @@ Donde $T_amb$ es la temperatura ambiente en donde se encuentra el cuerpo, en est
 Una posible función $T(t)$ que satisface esta ecuación diferencial es la siguiente:
 
 
-$$T(t) = T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt} \Rightarrow \\ \Rightarrow \frac{d T(t)}{d t} = -r(T_i - T_{\text{amb}}) \cdot e^{-rt}$$
-
 $$
-
-r(T_{\text{amb}} - T_{\text{amb}})\cdot e^{-rt} - r(T_i - T_{\text{amb}}) \cdot e^{-rt} = 
-$$
-$$
-= r \{T_{\text{amb}} - T_{\text{amb}} - (T_i - T_{\text{amb}})e^{-rt} \} = 
-$$
-$$
+T(t) = T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt} \Rightarrow \\ 
+\Rightarrow \frac{d T(t)}{d t} = -r(T_i - T_{\text{amb}}) \cdot e^{-rt} \\
+r(T_{\text{amb}} - T_{\text{amb}})\cdot e^{-rt} - r(T_i - T_{\text{amb}}) \cdot e^{-rt} = \\ 
+= r \{T_{\text{amb}} - T_{\text{amb}} - (T_i - T_{\text{amb}})e^{-rt} \} = \\ 
 r \{T_{\text{amb}} - \underbrace{[T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt}]}_{T(t)} \} = r [T_{\text{amb}} - T(t)]
-
 $$
 
 Algunos valores posibles para la constante de enfriamiento r son:
@@ -201,9 +196,7 @@ Con el objetivo de finalmente, después de tanto esfuerzo, estimar la hora de la
 
   
 $$
-
 T(t) - T_{\text{amb}} = T_{\text{diff}} e^{-rt} \Rightarrow \\ ln(T(t) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-rt}) = \underbrace{ln(T_{\text{diff}})}_{\beta_0} - \underbrace{r}_{\beta_1}t = \beta_0 + \beta_1 \cdot t
-
 $$
 
 Donde $\beta_0$ representa el logaritmo natural de la diferencia entre la temperatura inicial del cuerpo y la temperatura ambiente y $\beta_1$ es el cambio esperado en la diferencia de temperaturas del logaritmo por cada hora.
@@ -213,7 +206,11 @@ Una transformación posible para este modelo es la siguiente:
 
 Para poder interpretar t como el tiempo después de haber encontrado el cuerpo, se realiza una traslación utilizando un nuevo parámetro $\delta$.
 
-$$T(t+\delta) - T_{\text{amb}} = T_{\text{diff}} e^{-r(t+\delta)} \Rightarrow \\ ln(T(t+\delta) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-r(t+\delta)}) = \\ \underbrace{ln(T_{\text{diff}})}_{\beta_0} - \underbrace{r}_{\beta_1}(t+\delta) = \beta_0 - \beta_1 \cdot (t+\delta)$$
+$$
+T(t+\delta) - T_{\text{amb}} = T_{\text{diff}} e^{-r(t+\delta)} \Rightarrow \\ 
+ln(T(t+\delta) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-r(t+\delta)}) = \\ 
+\underbrace{ln(T_{\text{diff}})}_{\beta_0} - \underbrace{r}_{\beta_1}(t+\delta) = \beta_0 - \beta_1 \cdot (t+\delta)
+$$
 El modelo que se usa para estimar la hora de muerte de Sergio resulta entonces:
 
 $$
@@ -230,12 +227,10 @@ Guido recuerda haber mirado el pronóstico del tiempo el día de la muerte de Se
 
 
 $$
-ln(T(0)-T_{amb}) = \beta_0 - \beta_1 \cdot (0)
-$$
-$$
+ln(T(0)-T_{amb}) = \beta_0 - \beta_1 \cdot (0) \\
 \beta_0 = ln(37-22) =ln(15)=  2.7081
-
 $$
+
 Al ser un enfoque bayesiano, Guido debe pensar una distribución a priori para los parámetros $\delta$ y $\beta_1$.
 
 En principio, dado que el cuerpo fue encontrado con una temperatura corporal de 32.8°C, y sabiendo que Sergio murió desangrado, lo cual acelera considerablemente el descenso de la temperatura, cree que debe haber muerto hace aproximadamente 2 horas, aunque no está para nada seguro, por lo que utilizará una distribución uniforme, que irá entre 1 hora y media y 2 horas y media. 
@@ -282,17 +277,12 @@ En base a esto, tomará valores similares a los graficados para la distribución
 De manera un poco más formal, el modelo que planteado por Guido es el siguiente:
 
 $$
-
-ln(Y)/\mu_i,\ \sigma \sim \mathcal{N}(\mu_i,\ \sigma) \\
-
-\mu_i=\beta_0 + \beta_1\cdot (t+\delta) \\
-
-\beta_0 =2.7081 \\
-\beta_1 \sim \mathcal{N^+}(0.16,\ 0.075) \\
-
-\delta \sim \mathcal{U}(1.5, \ 2.5) \\
-\sigma \sim \mathcal{N^+}(0,\ 0.2 )
-
+ln(Y)/\mu_i,\ \sigma \sim N(\mu_i,\ \sigma) \\ 
+\mu_i=\beta_0 + \beta_1\cdot (t+\delta) \\ 
+\beta_0 =2.7081 \\ 
+\beta_1 \sim N^+(0.16,\ 0.075) \\ 
+\delta \sim U(1.5, \ 2.5) \\ 
+\sigma \sim N^+(0,\ 0.2 )
 $$
 
 Los parámetros, a priori, son independientes y siguen las distribuciones mencionadas.
@@ -306,6 +296,7 @@ El objetivo de Guido es estimar la hora de la muerte y para hacerlo usará toda 
 ## Pruebas predictivas a priori
 
 ```{r}
+load(file = "Stan_models/Resultados_modelos.RData")
 
 datos <- data.frame(
   t = c(0,1.5, 6.75),
@@ -432,7 +423,7 @@ stan_data <- list(
 ```
 
 
-```{r, eval=FALSE}
+```{r}
 mcmc_dens_overlay(stan_model)
 mcmc_trace(stan_model)
 
@@ -603,7 +594,7 @@ stan_data_3 <- list(
 ```
 
 
-```{r, eval=FALSE}
+```{r}
 mcmc_dens_overlay(stan_model_3)
 
 mcmc_trace(stan_model)
