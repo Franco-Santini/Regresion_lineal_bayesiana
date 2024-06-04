@@ -322,6 +322,7 @@ pred_prior <- data.frame(
   prior_beta_1 = abs(rnorm(n, 0.16, 0.02)),
   prior_d = abs(runif(n, min = 1.5, max = 2.5)),
   prior_sigma = abs(rnorm(n,0,0.05))
+
   ) 
 
 
@@ -420,15 +421,14 @@ stan_data <- list(
 
 
 ```{r, eval=FALSE}
-stan_model <- stan(
-    file = "Stan_models/Model_1.stan",
-    chains = 4,
-    data = stan_data,
-    iter = 10000,
-    # warmup = 2500,
-    refresh = 0,
-    seed = 90502
-    )
+# stan_model <- stan(
+#     file = "Stan_models/Model_1.stan",
+#     chains = 4,
+#     data = stan_data,
+#     iter = 10000,
+#     refresh = 0,
+#     seed = 90502
+#     )
 ```
 
 
@@ -510,17 +510,18 @@ stan_data_2 <- list(
 ```
 
 ```{r, eval=FALSE}
-stan_model_2 <- stan( 
-    file = "Stan_models/Model_1.stan", 
-    chains = 4,         
-    data = stan_data_2,
-    iter = 10000,
-    refresh = 0,        
-    seed = 110701
-)
+# stan_model_2 <- stan( 
+#     file = "Stan_models/Model_1.stan", 
+#     chains = 4,         
+#     data = stan_data_2,
+#     iter = 10000,
+#     refresh = 0,        
+#     seed = 110701
+# )
+```
 
 
-
+```{r}
 mcmc_trace(stan_model_2)
 mcmc_dens_overlay(stan_model_2)
 
@@ -536,7 +537,7 @@ mean(df_posterior_2$d < 2+(2/6) & df_posterior_2$d > 2-(2/6))
 
 
 ```{r prediccion 10am 2}
-# Grafico con intervalo de credibilidad ------------
+# Grafico con intervalo de credibilidad
 
 diff_prom_3 <- sapply(grilla_t, calc_diff_prom_posterior, df_posterior_2) |> `colnames<-`(round(grilla_t,1))
 
@@ -587,19 +588,22 @@ stan_data_3 <- list(
     t = datos$t,     
     y = log(datos$diff)      
 )
-
 ```
 
 ```{r, eval=FALSE}
-stan_model_3 <- stan( 
-    file = "Stan_models/Model_1.stan", 
-    chains = 4,         
-    data = stan_data_3,
-    iter = 10000,
-    refresh = 0,        
-    seed = 90502
-)
+# stan_model_3 <- stan(
+#     file = "Stan_models/Model_1.stan",
+#     chains = 4,
+#     data = stan_data_3,
+#     iter = 10000,
+#     refresh = 0,        
+#     seed = 90502
+# )
 # save(stan_model,stan_model_2,stan_model_3,file = "Stan_models/Resultados_modelos.RData")
+```
+
+
+```{r, eval=FALSE}
 mcmc_dens_overlay(stan_model_3)
 
 mcmc_trace(stan_model)
@@ -607,16 +611,22 @@ mcmc_trace(stan_model_2)
 mcmc_trace(stan_model_3)
 
 df_posterior_3 <- as.data.frame(extract(stan_model_3))
+
 quantile(x = pred_prior$prior_d,probs = c(0.1, 0.9))
 quantile(x = df_posterior$d,probs = c(0.1, 0.9))
 quantile(x = df_posterior_2$d,probs = c(0.1, 0.9))
 quantile(x = df_posterior_3$d,probs = c(0.1, 0.9))
+
 
 ```
 
 
 
 ```{r prediccion todos los datos 2}
+
+diff_prom_4 <- sapply(grilla_t, calc_diff_prom_posterior, df_posterior_3) |> `colnames<-`(round(grilla_t,1))
+
+graf_4 <- as.data.frame(diff_prom_4)
 
 # Grafico con intervalo de credibilidad ------------
 
