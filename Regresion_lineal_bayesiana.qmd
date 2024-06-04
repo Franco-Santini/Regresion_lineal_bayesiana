@@ -27,6 +27,7 @@ library(tidyverse)
 library(patchwork)
 library(tinytable)
 library(rstan)
+library(ggforce)
 library(tidybayes) # No se que hace
 library(bayesplot)
 ```
@@ -182,14 +183,14 @@ data.frame(t = rep(seq(0,60, length.out = 1000), times = 2),
   geom_line(aes(x = t, y = obs, color = valor_r)) +
   scale_y_continuous(breaks = seq(23,37,by=2), limits = c(23,37)) +
   scale_x_continuous(breaks = seq(0,24,by=2), limits = c(0,24)) +
-  labs(x = "Tiempo (horas)", color = "r")
+  labs(x = "Tiempo (horas)", color = "r", y = "Temperatura corporal (ºC)")
 
 
 ```
 
 Al ser su primer caso oficial, Guido se sintió un poco desconcertado por no saber a qué hora podría haber ocurrido la tragedia.
 
-Según lo publicado por la (La Gaceta Internacional de Ciencias Forenses)[https://www.uv.es/gicf/3R1_Pen%CC%83a_GICF_31.pdf] la tasa de enfriamiento del cuerpo varía en tres estapas, las primeras 3 o 4 horas donde la temperatura baja menos de medio grado por hora, las siguientes 6 a 10 horas donde la temperatura baja alrededor de 1 grado por hora, y a partir de las 10 horas el cuerpo desciende su temperatura entre 3/4 a 1/4 grados por hora, hasta alcanzar la temperatura ambiente. Teniendo en cuenta que r se supone constante, se puede asumir que un buen valor de r es mayor que 0,1 y menor que 0,45.
+Según lo publicado por la [La Gaceta Internacional de Ciencias Forenses](https://www.uv.es/gicf/3R1_Pen%CC%83a_GICF_31.pdf) la tasa de enfriamiento del cuerpo varía en tres estapas, las primeras 3 o 4 horas donde la temperatura baja menos de medio grado por hora, las siguientes 6 a 10 horas donde la temperatura baja alrededor de 1 grado por hora, y a partir de las 10 horas el cuerpo desciende su temperatura entre 3/4 a 1/4 grados por hora, hasta alcanzar la temperatura ambiente. Teniendo en cuenta que r se supone constante, se puede asumir que un buen valor de r es mayor que 0,1 y menor que 0,45.
 
 Con el objetivo de finalmente, después de tanto esfuerzo, estimar la hora de la muerte de Sergio, Guido decide utilizar un enfoque Bayesiano, planteando el siguiente modelo lineal.
 
@@ -266,7 +267,7 @@ data.frame(t = rep(seq(0,60, length.out = 1000), times = 3),
   geom_line(aes(x = t, y = obs, color = valor_r)) +
   scale_y_continuous(breaks = seq(23,37,by=2), limits = c(23,37)) +
   scale_x_continuous(breaks = seq(0,10,by=0.5), limits = c(0,10)) +
-  labs(x = "Tiempo (horas)")+
+  labs(x = "Tiempo (horas)", color = "r", y = "Temperatura corporal (ºC)")+
   geom_hline(yintercept = 32.8, linetype = "dashed")+
   # geom_vline(xintercept = 0.5) +
   geom_vline(xintercept = 2, linetype = "dashed")
@@ -348,7 +349,7 @@ data_mu <- data.frame(
 
 
 ```{r}
-#| fig-cap: "Distribución a Priori del logaritmo de la diferencia de temperatura."
+#| fig-cap: "Distribución a Priori del predictor lineal."
 
 ggplot(data_mu) +
   geom_ribbon(
@@ -364,8 +365,10 @@ ggplot(data_mu) +
   geom_line(
     aes(t, y), 
     color = "firebrick"
-  ) +
-  geom_point(data = datos,mapping = aes(x = t, y = log(diff)))
+  ) + 
+  labs(x = "Tiempo", y = expression(mu[i])) +
+  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7))
+  
 
 ```
 
@@ -390,7 +393,7 @@ Ahora sí, finalmente Guido utilizará los datos provistos para estimar la hora 
 
 Después de que la computadora de bajos recursos del departamento de la Policía Científica estuviera encendida durante días, Guido consiguió los siguientes resultados.
 
-Los datos disponibles sin los siguientes.
+Los datos disponibles son los siguientes:
 
 ```{r}
 datos |> 
@@ -406,22 +409,22 @@ stan_data <- list(
     t = as.array(datos[1,]$t),     
     y = as.array(log(datos[1,]$diff))      
 )
-# load("Stan_models/Modelos_ejecutados")
 
 ```
 
 
 ```{r, eval=FALSE}
-# stan_model <- stan(
-#     file = "Stan_models/Model_1.stan",
-#     chains = 4,
-#     data = stan_data,
-#     iter = 10000,
-#     refresh = 0,
-#     seed = 90502
-#     )
+stan_model <- stan(
+    file = "Stan_models/Model_1.stan",
+    chains = 4,
+    data = stan_data,
+    iter = 10000,
+    refresh = 0,
+    seed = 90502
+    )
 ```
 
+A Guido le remarcaban mucho en clases de Estadística Bayesiana la importancia de verificar la convergencia de las cadenas de Markov, en este caso obtenidas por el método NUTS (_No-U-Turn Sampler_), para los distintos párametros del modelo. Es por ello que para cada una de las estimaciones de los parámetros, presenta gráficos de densidad y de traza.
 
 ```{r}
 mcmc_dens_overlay(stan_model)
@@ -431,13 +434,49 @@ df_posterior <- as.data.frame(extract(stan_model))
 
 ```
 
+Con la información provista hasta las 7 de la mañana las cadenas de markov para cada uno de los parametros parecen converger a la misma distribucion a posteriori. Esto, además de haber obtenido un $\hat R = 1$ para todos los párametros le confirman a Guido que las muestras obtenidas son representativas de los parámetros.
+
+
+La curiosidad de Guido lo llevaba a querer visualizar como los datos afectan al prior, por lo que graficó bandas de credibilidad para el predictor lineal y para la diferencias de temperaturas.
+
+```{r}
+
+calc_pred_linear <- function(t, data) {
+  return((2.7081 - data$beta1 * (t+data$d)))
+}
+
+pred_linear <- sapply(grilla_t, calc_pred_linear, df_posterior) |> `colnames<-`(round(grilla_t,1))
+
+pred_linear <- as.data.frame(pred_linear)
+
+
+
+# Grafico con intervalo de credibilidad ------------
+
+
+mu_mean <- apply(pred_linear, 2, mean)
+
+mu_qts <- t(apply(pred_linear, 2, function(x) quantile(x, c(0.025, 0.975))))
+
+mu_qts2 <- t(apply(pred_linear, 2, function(x) quantile(x, c(0.25, 0.75))))
+
+
+data_mu <- data.frame(
+  t = grilla_t, 
+  y = mu_mean,
+  lower_95 = mu_qts[, 1],
+  upper_95 = mu_qts[, 2],
+  lower_50 = mu_qts2[, 1],
+  upper_50 = mu_qts2[, 2]
+)
+```
+
 
 ```{r prediccion 7am 2}
-
 # Bandas
 
 calc_diff_prom_posterior <- function(t, data) {
-  return((2.7081 - data$beta1 * (t+data$d)))
+  return(exp(rnorm(nrow(data), mean = (2.7081 - data$beta1 * (t+data$d)), sd = data$sigma)))
 }
 
 diff_prom_2 <- sapply(grilla_t, calc_diff_prom_posterior, df_posterior) |> `colnames<-`(round(grilla_t,1))
@@ -449,66 +488,106 @@ graf_2 <- as.data.frame(diff_prom_2)
 # Grafico con intervalo de credibilidad ------------
 
 
-mu_mean <- apply(graf_2, 2, mean)
+y_mean <- apply(graf_2, 2, mean)
 
-mu_qts <- t(apply(graf_2, 2, function(x) quantile(x, c(0.025, 0.975))))
+y_qts <- t(apply(graf_2, 2, function(x) quantile(x, c(0.025, 0.975))))
 
-mu_qts2 <- t(apply(graf_2, 2, function(x) quantile(x, c(0.25, 0.75))))
+y_qts2 <- t(apply(graf_2, 2, function(x) quantile(x, c(0.25, 0.75))))
 
 
-data_mu <- data.frame(
+data_y <- data.frame(
   t = grilla_t, 
-  y = mu_mean,
-  lower_95 = mu_qts[, 1],
-  upper_95 = mu_qts[, 2],
-  lower_50 = mu_qts2[, 1],
-  upper_50 = mu_qts2[, 2]
+  y = y_mean,
+  lower_95 = y_qts[, 1],
+  upper_95 = y_qts[, 2],
+  lower_50 = y_qts2[, 1],
+  upper_50 = y_qts2[, 2]
 )
+```
+
+
+```{r graf prediccion 7am 2}
+#| fig-cap: "Distribuciónes a Priori con la información hasta las 7hs."
+#| fig-subcap: 
+#|   - "Del predictor lineal"
+#|   - "De $T(t)-T_{amb}$"
+#| layout-ncol: 2
 
 ggplot(data_mu) +
   geom_ribbon(
     aes(t, ymin = lower_95, ymax = upper_95),
     fill = "grey50",
-    alpha = 0.6
-  ) +
+    alpha = 0.6) +
   geom_ribbon(
     aes(t, ymin = lower_50, ymax = upper_50),
     fill = "grey35",
-    alpha = 0.6
-  ) +
+    alpha = 0.6) +
   geom_line(
     aes(t, y), 
-    color = "firebrick"
-  ) + 
+    color = "firebrick") + 
   geom_point(
-    data = datos,mapping = aes(x = t, y = log(diff)), size = 0.1
-  )
+    data = datos[1,],mapping = aes(x = t, y = log(diff)), size = 1) +
+  # geom_mark_ellipse(
+  #   data = datos[1,],
+  #   mapping = aes(x = t, y = log(diff)),
+  #   label = "Primera observación",
+  #   description = "06:45 | 32.8ºC", 
+  #   color = "red", 
+  #   expand = 0.01) +
+  labs(x = "Tiempo", y = expression(mu[i])) +
+  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7))
+
+
+ggplot(data_y) +
+  geom_ribbon(
+    aes(t, ymin = lower_95, ymax = upper_95),
+    fill = "grey50",
+    alpha = 0.6) +
+  geom_ribbon(
+    aes(t, ymin = lower_50, ymax = upper_50),
+    fill = "grey35",
+    alpha = 0.6) +
+  geom_line(
+    aes(t, y), 
+    color = "firebrick") + 
+  # geom_mark_ellipse(
+  #   data = datos[1,],
+  #   mapping = aes(x = t, y = log(diff)),
+  #   label = "Primera observación",
+  #   description = "06:45 | 32.8ºC", 
+  #   color = "red", 
+  #   expand = 0.01) +
+  labs(x = "Tiempo", y = expression(T(t)-T[amb])) +
+  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7))
 
 
 
 ```
 
-$$ln(37 - 22) = \beta_0 + \beta_1 \cdot t_i \Rightarrow \frac{ln(15) - \beta_0}{\beta_1}=t_i$$
-En base a la evidencia que tenemos hasta las 7am y nuestros priors definidos, podemos decir que hay un 60% de probabilidad de que el loco se haya muerto entre las 1 am y 7 am.
+```{r}
+predictiva_post1 <- quantile(df_posterior$d,probs = c(0.05, 0.95))
+```
 
-```{r prediccion 10am 1}
+
+Guido observa que esta primera observación parece acotar levemente el intervalo de tiempo en el que puede decir con una buena certeza que Sergio murió. Ahora Guido puede decir con la misma credibilidad de antes que Sergio falleció entre las 4:19hs y las 5:11hs. Esto no parece mucho, pero le sirve a Guido para saber que va por buen camino, lo cual lo motiva a seguir.
+
+Guido procede a seguir añadiendo datos a su modelo, con lo que usa la información disponible hasta las 10hs obteniendo los siguientes resultados. 
+
+```{r prediccion 10am 1, eval=FALSE}
 stan_data_2 <- list(
     N = nrow(datos[1:2,]), 
     t = datos[1:2,]$t,     
     y = log(datos[1:2,]$diff)      
 )
 
-```
-
-```{r, eval=FALSE}
-# stan_model_2 <- stan( 
-#     file = "Stan_models/Model_1.stan", 
-#     chains = 4,         
-#     data = stan_data_2,
-#     iter = 10000,
-#     refresh = 0,        
-#     seed = 110701
-# )
+stan_model_2 <- stan(
+    file = "Stan_models/Model_1.stan",
+    chains = 4,
+    data = stan_data_2,
+    iter = 10000,
+    refresh = 0,
+    seed = 110701
+)
 ```
 
 
@@ -518,32 +597,27 @@ mcmc_dens_overlay(stan_model_2)
 
 df_posterior_2 <- as.data.frame(extract(stan_model_2))
 
-mean(df_posterior_2$d < 2+(2/6) & df_posterior_2$d > 2-(2/6))
-
-# stan_model
-# stan_model_2
-# stan_model_3
 ```
 
-
+De igual forma que con un solo dato, las cadenas convergen a la misma distribución para todos los parámetros, pero estas son incluso más acotadas que antes.
 
 ```{r prediccion 10am 2}
 # Grafico con intervalo de credibilidad
 
-diff_prom_3 <- sapply(grilla_t, calc_diff_prom_posterior, df_posterior_2) |> `colnames<-`(round(grilla_t,1))
+pred_linear2 <- sapply(grilla_t, calc_pred_linear, df_posterior_2) |> `colnames<-`(round(grilla_t,1))
 
-graf_3 <- as.data.frame(diff_prom_3)
-
-
-
-mu_mean <- apply(graf_3, 2, mean)
-
-mu_qts <- t(apply(graf_3, 2, function(x) quantile(x, c(0.025, 0.975))))
-
-mu_qts2 <- t(apply(graf_3, 2, function(x) quantile(x, c(0.25, 0.75))))
+pred_linear2 <- as.data.frame(pred_linear2)
 
 
-data_mu <- data.frame(
+
+mu_mean <- apply(pred_linear2, 2, mean)
+
+mu_qts <- t(apply(pred_linear2, 2, function(x) quantile(x, c(0.025, 0.975))))
+
+mu_qts2 <- t(apply(pred_linear2, 2, function(x) quantile(x, c(0.25, 0.75))))
+
+
+data_mu2 <- data.frame(
   t = grilla_t, 
   y = mu_mean,
   lower_95 = mu_qts[, 1],
@@ -552,26 +626,98 @@ data_mu <- data.frame(
   upper_50 = mu_qts2[, 2]
 )
 
-ggplot(data_mu) +
-  geom_ribbon(
-    aes(t, ymin = lower_95, ymax = upper_95),
-    fill = "grey50",
-    alpha = 0.6
-  ) +
-  geom_ribbon(
-    aes(t, ymin = lower_50, ymax = upper_50),
-    fill = "grey35",
-    alpha = 0.6
-  ) +
-  geom_line(
-    aes(t, y), 
-    color = "firebrick"
-  ) + geom_point(
-    data = datos,mapping = aes(x = t, y = log(diff)), size = 0.1
-  )
+# Grafico con intervalo de credibilidad
+
+diff_prom_3 <- sapply(grilla_t, calc_diff_prom_posterior, df_posterior_2) |> `colnames<-`(round(grilla_t,1))
+
+graf_3 <- as.data.frame(diff_prom_3)
+
+
+
+y_mean <- apply(graf_3, 2, mean)
+
+y_qts <- t(apply(graf_3, 2, function(x) quantile(x, c(0.025, 0.975))))
+
+y_qts2 <- t(apply(graf_3, 2, function(x) quantile(x, c(0.25, 0.75))))
+
+
+data_y2 <- data.frame(
+  t = grilla_t, 
+  y = y_mean,
+  lower_95 = y_qts[, 1],
+  upper_95 = y_qts[, 2],
+  lower_50 = y_qts2[, 1],
+  upper_50 = y_qts2[, 2]
+)
 
 
 ```
+
+
+```{r}
+#| fig-cap: "Distribuciónes a Priori con la información hasta las 7hs."
+#| fig-subcap: 
+#|   - "Del predictor lineal"
+#|   - "De $T(t)-T_{amb}$"
+#| layout-ncol: 2
+
+ggplot(data_mu2) +
+  geom_ribbon(
+    aes(t, ymin = lower_95, ymax = upper_95),
+    fill = "grey50",
+    alpha = 0.6) +
+  geom_ribbon(
+    aes(t, ymin = lower_50, ymax = upper_50),
+    fill = "grey35",
+    alpha = 0.6) +
+  geom_line(
+    aes(t, y), 
+    color = "firebrick") + 
+  geom_point(
+    data = datos[1:2,],mapping = aes(x = t, y = log(diff)), size = 1) +
+  # geom_mark_ellipse(
+  #   data = datos[1,],
+  #   mapping = aes(x = t, y = log(diff)),
+  #   label = "Primera observación",
+  #   description = "06:45 | 32.8ºC", 
+  #   color = "red", 
+  #   expand = 0.01) +
+  labs(x = "Tiempo", y = expression(mu[i])) +
+  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7))
+
+
+ggplot(data_y2) +
+  geom_ribbon(
+    aes(t, ymin = lower_95, ymax = upper_95),
+    fill = "grey50",
+    alpha = 0.6) +
+  geom_ribbon(
+    aes(t, ymin = lower_50, ymax = upper_50),
+    fill = "grey35",
+    alpha = 0.6) +
+  geom_line(
+    aes(t, y), 
+    color = "firebrick") + 
+  # geom_mark_ellipse(
+  #   data = datos[1,],
+  #   mapping = aes(x = t, y = log(diff)),
+  #   label = "Primera observación",
+  #   description = "06:45 | 32.8ºC", 
+  #   color = "red", 
+  #   expand = 0.01) +
+  labs(x = "Tiempo", y = expression(T(t)-T[amb])) +
+  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7))
+
+```
+
+```{r}
+predictiva_post2 <- quantile(df_posterior_2$d,probs = c(0.05, 0.95))
+```
+
+
+Guido ahora concluye con una certeza del 90% que Sergio pereció entre las 4:20hs y las 5:07hs.
+
+Finalmente, decide hacer uso de toda la información disponible, aunque la última temperatura registrada del cuerpo le traía un mal presentimiento...
 
 ```{r prediccion todos los datos 1}
 stan_data_3 <- list(
@@ -582,14 +728,14 @@ stan_data_3 <- list(
 ```
 
 ```{r, eval=FALSE}
-# stan_model_3 <- stan(
-#     file = "Stan_models/Model_1.stan",
-#     chains = 4,
-#     data = stan_data_3,
-#     iter = 10000,
-#     refresh = 0,        
-#     seed = 90502
-# )
+stan_model_3 <- stan(
+    file = "Stan_models/Model_1.stan",
+    chains = 4,
+    data = stan_data_3,
+    iter = 10000,
+    refresh = 0,
+    seed = 90502
+)
 # save(stan_model,stan_model_2,stan_model_3,file = "Stan_models/Resultados_modelos.RData")
 ```
 
@@ -597,89 +743,130 @@ stan_data_3 <- list(
 ```{r}
 mcmc_dens_overlay(stan_model_3)
 
-mcmc_trace(stan_model)
-mcmc_trace(stan_model_2)
 mcmc_trace(stan_model_3)
 
 df_posterior_3 <- as.data.frame(extract(stan_model_3))
 
-quantile(x = pred_prior$prior_d,probs = c(0.1, 0.9))
-quantile(x = df_posterior$d,probs = c(0.1, 0.9))
-quantile(x = df_posterior_2$d,probs = c(0.1, 0.9))
-quantile(x = df_posterior_3$d,probs = c(0.1, 0.9))
-
-
 ```
 
+Hasta ahora todo iba bien, las cadenas aún convergían, pero al ver la densidad estimada del parámetro $\delta$ sospechaba que algo no encajaba, pero decidió seguir adelante.
+
+```{r prediccion 10am 3}
+# Grafico con intervalo de credibilidad
+
+pred_linear3 <- sapply(grilla_t, calc_pred_linear, df_posterior_3) |> `colnames<-`(round(grilla_t,1))
+
+pred_linear3 <- as.data.frame(pred_linear3)
 
 
-```{r prediccion todos los datos 2}
 
-diff_prom_4 <- sapply(grilla_t, calc_diff_prom_posterior, df_posterior_3) |> `colnames<-`(round(grilla_t,1))
+mu_mean <- apply(pred_linear3, 2, mean)
 
-graf_4 <- as.data.frame(diff_prom_4)
+mu_qts <- t(apply(pred_linear3, 2, function(x) quantile(x, c(0.025, 0.975))))
 
-# Grafico con intervalo de credibilidad ------------
-
-
-mu_mean <- apply(graf_4, 2, mean)
-
-mu_qts <- t(apply(graf_4, 2, function(x) quantile(x, c(0.025, 0.975))))
-
-mu_qts2 <- t(apply(graf_4, 2, function(x) quantile(x, c(0.25, 0.75))))
+mu_qts2 <- t(apply(pred_linear3, 2, function(x) quantile(x, c(0.25, 0.75))))
 
 
-data_mu <- data.frame(
+data_mu3 <- data.frame(
   t = grilla_t, 
   y = mu_mean,
-  diferencia = exp(rnorm(mu_mean,sd = abs(rnorm(0.3)))),
   lower_95 = mu_qts[, 1],
   upper_95 = mu_qts[, 2],
   lower_50 = mu_qts2[, 1],
   upper_50 = mu_qts2[, 2]
 )
 
-ggplot(data_mu) +
+# Grafico con intervalo de credibilidad
+
+diff_prom_4 <- sapply(grilla_t, calc_diff_prom_posterior, df_posterior_3) |> `colnames<-`(round(grilla_t,1))
+
+graf_4 <- as.data.frame(diff_prom_4)
+
+
+
+y_mean <- apply(graf_4, 2, mean)
+
+y_qts <- t(apply(graf_4, 2, function(x) quantile(x, c(0.025, 0.975))))
+
+y_qts2 <- t(apply(graf_4, 2, function(x) quantile(x, c(0.25, 0.75))))
+
+
+data_y3 <- data.frame(
+  t = grilla_t, 
+  y = y_mean,
+  lower_95 = y_qts[, 1],
+  upper_95 = y_qts[, 2],
+  lower_50 = y_qts2[, 1],
+  upper_50 = y_qts2[, 2]
+)
+
+
+```
+
+
+```{r}
+#| fig-cap: "Distribuciónes a Priori con la información hasta las 7hs."
+#| fig-subcap: 
+#|   - "Del predictor lineal"
+#|   - "De $T(t)-T_{amb}$"
+#| layout-ncol: 2
+
+ggplot(data_mu3) +
   geom_ribbon(
     aes(t, ymin = lower_95, ymax = upper_95),
     fill = "grey50",
-    alpha = 0.6
-  ) +
+    alpha = 0.6) +
   geom_ribbon(
     aes(t, ymin = lower_50, ymax = upper_50),
     fill = "grey35",
-    alpha = 0.6
-  ) +
+    alpha = 0.6) +
   geom_line(
     aes(t, y), 
-    color = "firebrick"
-  ) + geom_point(
-    data = datos,mapping = aes(x = t, y = log(diff)), size = 0.1
-  )
+    color = "firebrick") + 
+  geom_point(
+    data = datos,mapping = aes(x = t, y = log(diff)), size = 1) +
+  # geom_mark_ellipse(
+  #   data = datos[1,],
+  #   mapping = aes(x = t, y = log(diff)),
+  #   label = "Primera observación",
+  #   description = "06:45 | 32.8ºC", 
+  #   color = "red", 
+  #   expand = 0.01) +
+  labs(x = "Tiempo", y = expression(mu[i])) +
+  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7))
 
+
+ggplot(data_y3) +
+  geom_ribbon(
+    aes(t, ymin = lower_95, ymax = upper_95),
+    fill = "grey50",
+    alpha = 0.6) +
+  geom_ribbon(
+    aes(t, ymin = lower_50, ymax = upper_50),
+    fill = "grey35",
+    alpha = 0.6) +
+  geom_line(
+    aes(t, y), 
+    color = "firebrick") + 
+  # geom_mark_ellipse(
+  #   data = datos[1,],
+  #   mapping = aes(x = t, y = log(diff)),
+  #   label = "Primera observación",
+  #   description = "06:45 | 32.8ºC", 
+  #   color = "red", 
+  #   expand = 0.01) +
+  labs(x = "Tiempo", y = expression(T(t)-T[amb])) +
+  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7))
 
 ```
 
 ```{r}
-ggplot(data_mu) +
-  geom_ribbon(
-    aes(t, ymin = exp(lower_95), ymax = exp(upper_95)),
-    fill = "grey50",
-    alpha = 0.6
-  ) +
-  geom_ribbon(
-    aes(t, ymin = exp(lower_50), ymax = exp(upper_50)),
-    fill = "grey35",
-    alpha = 0.6
-  ) +
-  geom_line(
-    aes(t, exp(y)), 
-    color = "firebrick"
-  ) +
-  scale_x_continuous(limits = c(-10, 10)) +
-  scale_y_continuous(limits = c(0, 20))
+predictiva_post3 <- quantile(x = df_posterior_3$d,probs = c(0.05, 0.95))
 ```
 
+Con estos resultados, Sergio pudo haber fenecido entre las 4:17hs y las 5:10hs, un intervalo de tiempo mayor que el que se había obtenido anteriormente.
+
+"¡Lo que sospechaba!" dijo Guido, al asimilar que la última temperatura registrada de Sergio fue en la morgue, un lugar que tiende a ser frío para la preservación de los cadáveres, con lo que la temperatura del cuerpo de Sergio pudo haberse enfriado más rapidamente que en el lugar del hecho, donde recuerda que había una temperatura ambiente de 22ºC.
 
 # Punto 9
 
@@ -697,5 +884,13 @@ $\underbrace{ln(T_{\text{diff}})}_{\beta_0} + \underbrace{(-r)}_{\beta_1}t + (\a
 No modificaría en ningún aspecto el modelo el saber que Sergio no gozaba de buena salud, dado que nuestro prior abarca hasta el caso más extremo de la temperatura corporal de una persona, considerando que la temperatura del ambiente se encuentra a 22°.
 
 
+# COSAS A AGREGAR
 
+- Interpretaciones a los gráficos de las bandas de credibilidad
+
+- Graficos de trazas y densidades de parametros
+
+- Revisar la redaccion del principio
+
+- Linea de tiempo con el paquete ggtimelines
 
