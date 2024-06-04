@@ -319,7 +319,7 @@ grilla_t <- seq(-4, 7 ,length.out = largo_grilla)
 
 beta_0 <- 2.7081
 pred_prior <- data.frame(
-  prior_beta_1 = abs(rnorm(n, 0.16, 0.075)),
+  prior_beta_1 = abs(rnorm(n, 0.16, 0.02)),
   prior_d = abs(runif(n, min = 1.5, max = 2.5)),
   prior_sigma = abs(rnorm(n,0,0.05))
   ) 
@@ -372,9 +372,8 @@ ggplot(data_mu) +
   geom_line(
     aes(t, y), 
     color = "firebrick"
-  ) 
-# +
-#   geom_point(data = datos,mapping = aes(x = t, y = log(diff)))
+  ) +
+  geom_point(data = datos,mapping = aes(x = t, y = log(diff)))
 
 ```
 
@@ -428,14 +427,8 @@ stan_model <- stan(
     iter = 10000,
     # warmup = 2500,
     refresh = 0,
-    seed = 90502, init = list(
-      list(beta1 = 0.13, d = 2),
-      list(beta1 = 0.15, d = 2),
-      list(beta1 = 0.17, d = 2),
-      list(beta1 = 0.19, d = 2)
-      )
+    seed = 90502
     )
-# ?stan
 ```
 
 
@@ -523,10 +516,9 @@ stan_model_2 <- stan(
     data = stan_data_2,
     iter = 10000,
     refresh = 0,        
-    seed = 90502
+    seed = 110701
 )
 
-# save(file = "Stan_models/Resultados_modelos.RData")
 
 
 mcmc_trace(stan_model_2)
@@ -607,6 +599,7 @@ stan_model_3 <- stan(
     refresh = 0,        
     seed = 90502
 )
+# save(stan_model,stan_model_2,stan_model_3,file = "Stan_models/Resultados_modelos.RData")
 mcmc_dens_overlay(stan_model_3)
 
 mcmc_trace(stan_model)
@@ -614,10 +607,10 @@ mcmc_trace(stan_model_2)
 mcmc_trace(stan_model_3)
 
 df_posterior_3 <- as.data.frame(extract(stan_model_3))
-quantile(x = pred_prior$prior_d)
-quantile(x = df_posterior$d)
-quantile(x = df_posterior_2$d)
-quantile(x = df_posterior_3$d)
+quantile(x = pred_prior$prior_d,probs = c(0.1, 0.9))
+quantile(x = df_posterior$d,probs = c(0.1, 0.9))
+quantile(x = df_posterior_2$d,probs = c(0.1, 0.9))
+quantile(x = df_posterior_3$d,probs = c(0.1, 0.9))
 
 ```
 
