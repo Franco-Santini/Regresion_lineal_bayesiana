@@ -34,7 +34,7 @@ library(ggfittext)
 ```
 
 ```{r Configuraciones predeterminadas}
-knitr::opts_chunk$set(fig.align = "center", out.width = "70%")
+knitr::opts_chunk$set(fig.align = "center", out.width = "100%")
 
 set.seed("2126519")
 
@@ -185,11 +185,9 @@ Donde $T_amb$ es la temperatura ambiente en donde se encuentra el cuerpo, en est
 
 Una posible función $T(t)$ que satisface esta ecuación diferencial es la siguiente:
 
-
-$$
+\begin{align*}
 T(t) = T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt} \Rightarrow \frac{d T(t)}{d t} = -r(T_i - T_{\text{amb}}) \cdot e^{-rt} \\ r(T_{\text{amb}} - T_{\text{amb}})\cdot e^{-rt} - r(T_i - T_{\text{amb}}) \cdot e^{-rt} = r \{T_{\text{amb}} - T_{\text{amb}} - (T_i - T_{\text{amb}})e^{-rt} \} = \\ = r \{T_{\text{amb}} - \underbrace{[T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt}]}_{T(t)} \} = r [T_{\text{amb}} - T(t)]
-$$
-
+\end{align*}
 
 Algunos valores posibles para la constante de enfriamiento r son:
 
@@ -233,6 +231,7 @@ r2 <- function_T(t = seq(0,60, length.out = 1000),
 
 ```{r grafico funcion temp amb 23 2}
 #| fig-cap: "Temperatura del cuerpo según tiempo post-mortem\nTemperatura ambiente: 23 °C"
+#| out-width: "70%"
 
 data.frame(t = rep(seq(0,60, length.out = 1000), times = 2),
            obs = c(r1,r2),
@@ -251,7 +250,7 @@ Al ser su primer caso oficial, Guido se sintió un poco desconcertado por no sab
 Con el objetivo de finalmente, después de tanto esfuerzo, estimar la hora de la muerte de Sergio, Guido decide utilizar un enfoque Bayesiano, planteando el siguiente modelo lineal.
 
 $$
-T(t) - T_{\text{amb}} = T_{\text{diff}} e^{-rt} \Rightarrow \\ ln(T(t) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-rt}) = \underbrace{ln(T_{\text{diff}})}_{\beta_0} - \underbrace{r}_{\beta_1}t = \beta_0 + \beta_1 \cdot t
+T(t) - T_{\text{amb}} = T_{\text{diff}} e^{-rt} \Rightarrow \\ ln(T(t) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-rt}) = \underbrace{ln(T_{\text{diff}})}_{\beta_0} - \underbrace{r}_{\beta_1}t = \beta_0 - \beta_1 \cdot t
 $$
 
 Donde $\beta_0$ representa el logaritmo natural de la diferencia entre la temperatura inicial del cuerpo y la temperatura ambiente y $\beta_1$ es el cambio esperado en el logaritmo de la diferencia de temperaturas por cada hora.
@@ -279,7 +278,7 @@ Guido recuerda haber mirado el pronóstico del tiempo el día de la muerte de Se
 
 
 $$
-ln(T(0)-T_{amb}) = \beta_0 - \beta_1 \cdot (0) \\
+ln(T(0)-T_{amb}) = \beta_0 - \beta_1 \cdot (0) =
 \beta_0 = ln(37-22) =ln(15)=  2.7081
 $$
 
@@ -310,6 +309,8 @@ r4 <- function_T(t = seq(0,60, length.out = 1000),
 
 ```{r grafico funcion temp amb 22 2}
 #| fig-cap: "Temperatura del cuerpo según tiempo post-mortem\nTemperatura ambiente: 22 °C"
+#| out-width: "70%"
+
 data.frame(t = rep(seq(0,60, length.out = 1000), times = 3),
            obs = c(r1,r2,r4),
            valor_r = rep(c("r = 0.14", "r = 0.16","r = 0.18"), each = 1000)) |> 
@@ -329,14 +330,9 @@ Con respecto al parámetro $\sigma$, cree que un termómetro puede fallar a lo s
 
 De manera un poco más formal, el modelo planteado por Guido es el siguiente, suponiendo que los parámetros, a priori, son independientes.
 
-$$
-ln(Y)/\mu_i,\ \sigma \sim N(\mu_i,\ \sigma) \\ 
-\mu_i=\beta_0 + \beta_1\cdot (t+\delta) \\ 
-\beta_0 =2.7081 \\ 
-\beta_1 \sim N^+(0.16,\ 0.075) \\ 
-\delta \sim U(1.5, \ 2.5) \\ 
-\sigma \sim N^+(0,\ 0.2 )
-$$
+\begin{align*}
+ln(Y)/\mu_i,\ \sigma \sim N(\mu_i,\ \sigma) \\ \mu_i=\beta_0 + \beta_1\cdot (t+\delta) \\ \beta_0 =2.7081 \\ \beta_1 \sim N^+(0.16,\ 0.075) \\ \delta \sim U(1.5, \ 2.5) \\ \sigma \sim N^+(0,\ 0.2 )
+\end{align*}
 
 
 El interés se centra principalmente en el parámetro $\delta$
@@ -345,7 +341,7 @@ El interés se centra principalmente en el parámetro $\delta$
 
 El objetivo de Guido es estimar la hora de la muerte y para hacerlo usará toda la información que tenga a su disposición. Pero antes de esto, quiere asegurarse de que sus creencias iniciales tengan sentido, por lo que decide realizar pruebas predictivas a priori.
 
-## Pruebas predictivas a priori
+## Pruebas predictivas a Priori
 
 ```{r grafico bandas prior 1}
 load(file = "Stan_models/Resultados_modelos.RData")
@@ -369,15 +365,6 @@ pred_prior <- data.frame(
   sigma = abs(rnorm(n,0,0.05))
   ) 
 
-# 
-# calc_diff_prom <- function(t, data) {
-#   return(beta_0 - data$beta1 * (t+data$d))
-# }
-# 
-# 
-# diff_prom <- sapply(grilla_t, calc_diff_prom, pred_prior) |> `colnames<-`(round(grilla_t,1))
-# 
-# graf <- as.data.frame(diff_prom)
 
 # Grafico con intervalo de credibilidad ------------
 calc_pred_linear <- function(t, data) {
@@ -470,14 +457,7 @@ ggplot(data_y_pred) +
   geom_line(
     aes(t, y), 
     color = "firebrick") +
-  # geom_mark_ellipse(
-  #   data = datos[1,],
-  #   mapping = aes(x = t, y = log(diff)),
-  #   label = "Primera observación",
-  #   description = "06:45 | 32.8ºC", 
-  #   color = "red", 
-  #   expand = 0.01) +
-  labs(x = "Tiempo", y = expression(T(t)-T[amb])) +
+  labs(x = "Tiempo", y = expression(T(t+delta)-T[amb])) +
   scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7))
 
 ```
@@ -489,7 +469,7 @@ predictiva_prior <- dec_a_hex(6.75 - quantile(pred_prior$d,probs = c(0.95, 0.05)
 
 ```
 
-A priori Guido concluye con una credibilidad del 90% que sergio murió entre las `r predictiva_prior[1]` y las `r predictiva_prior[2]`, por lo que las distribuciones a priori que planteó parecen tener sentido.
+A priori Guido concluye con una credibilidad del 90% que Sergio murió entre las `r predictiva_prior[1]` y las `r predictiva_prior[2]`, por lo que las distribuciones a priori que planteó parecen tener sentido.
 
 ## Pruebas predictivas a Posteriori
 
@@ -534,7 +514,7 @@ A Guido le remarcaban mucho en clases de Estadística Bayesiana la importancia d
 ```{r posterior 7am}
 source("Graficos.R")
 df_posterior <- as.data.frame(extract(stan_model))
-colores <- c("skyblue2", "gray34", "lightgreen", "pink")
+colores <- c("dodgerblue", "gold", "lightgreen", "pink2")
 ```
 
 ```{r graficos cadenas 1}
@@ -690,7 +670,7 @@ ggplot(data_y) +
   geom_point(
     data = datos[1,],mapping = aes(x = t, y = diff, color = Observacion), size = 1.5) +
   scale_color_manual(values = c("gold")) +
-  labs(x = "Tiempo", y = expression(T(t)-T[amb]), color = "Hora | Temperatura") +
+  labs(x = "Tiempo", y = expression(T(t+delta)-T[amb]), color = "Hora | Temperatura") +
   scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7)) +
   theme(legend.position = "top")
 
@@ -701,7 +681,7 @@ predictiva_post1 <- dec_a_hex(6.75 - quantile(df_posterior$d,probs = c(0.95, 0.0
 ```
 
 
-Guido observa que esta primera observación parece acotar levemente el intervalo de tiempo en el que puede decir con una buena certeza que Sergio murió. Ahora Guido puede decir con la misma credibilidad de antes que Sergio falleció entre las `r predictiva_post1[1]` y las `r predictiva_post1[2]`. Esto no parece mucho, pero le sirve a Guido para saber que va por buen camino, lo cual lo motiva a seguir.
+Guido observa que esta primera observación parece acotar levemente el intervalo de tiempo en el que puede decir con una buena certeza que Sergio murió. Ahora Guido puede decir con la misma credibilidad de antes que Sergio falleció entre las `r predictiva_post1[1]` y las `r predictiva_post1[2]`, calculado a partir de la distribución a posteriori de $\delta$, que se muestra en la figura @fig-cadenas2. Esto no parece mucho, pero le sirve a Guido para saber que va por buen camino, lo cual lo motiva a seguir.
 
 Guido procede a seguir añadiendo datos a su modelo, con lo que usa la información disponible hasta las 10hs obteniendo los siguientes resultados. 
 
@@ -728,7 +708,7 @@ df_posterior_2 <- as.data.frame(extract(stan_model_2))
 
 ```
 
-De igual forma que con un solo dato, las cadenas convergen a la misma distribución para todos los parámetros, pero estas son incluso más acotadas que antes. Esto se puede ver en los siguientes gráficos de traza y densidad para cada uno de los parámetros.
+De igual forma que con un solo dato, todos los $\hat R$ son iguales a 1, indicando que las cadenas convergen a la misma distribución para todos los parámetros. Esto se puede ver en los siguientes gráficos de traza y densidad para cada uno de los parámetros.
 
 ```{r graficos cadenas 4}
 #| label: fig-cadenas4
@@ -865,7 +845,7 @@ ggplot(data_y2) +
   geom_point(
     data = datos[1:2,],mapping = aes(x = t, y = diff, color = Observacion), size = 1.5) +
   scale_color_manual(values = c("gold", "lightgreen")) +
-  labs(x = "Tiempo", y = expression(T(t)-T[amb]), color = "Hora | Temperatura") +
+  labs(x = "Tiempo", y = expression(T(t+delta)-T[amb]), color = "Hora | Temperatura") +
   scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7)) +
   theme(legend.position = "top")
 ```
@@ -875,9 +855,7 @@ predictiva_post2 <- dec_a_hex(6.75 - quantile(df_posterior_2$d,probs = c(0.95, 0
 ```
 
 
-Guido ahora concluye con una certeza del 90% que Sergio pereció entre las `r predictiva_post2[1]` y las `r predictiva_post2[2]`.
-
-\newpage
+Guido ahora concluye con una certeza del 90% que Sergio pereció entre las `r predictiva_post2[1]` y las `r predictiva_post2[2]`, calculado a partir de la distribución a posteriori de $\delta$, que se muestra en la figura @fig-cadenas5.
 
 Finalmente, decide hacer uso de toda la información disponible, aunque la última temperatura registrada del cuerpo le traía un mal presentimiento...
 
@@ -901,17 +879,52 @@ stan_model_3 <- stan(
 # save(stan_model,stan_model_2,stan_model_3,file = "Stan_models/Resultados_modelos.RData")
 ```
 
-
 ```{r}
-mcmc_dens_overlay(stan_model_3)
-
-mcmc_trace(stan_model_3)
-
 df_posterior_3 <- as.data.frame(extract(stan_model_3))
 
 ```
 
-Hasta ahora todo iba bien, las cadenas aún convergían, pero al ver la densidad estimada del parámetro $\delta$ sospechaba que algo no encajaba, pero decidió seguir adelante.
+```{r graficos cadenas 7}
+#| label: fig-cadenas7
+#| fig-cap: "Cadenas de Markov para $\\beta_1$"
+#| fig-subcap: 
+#|   - "Traza"
+#|   - "Densidad"
+#| layout-ncol: 2
+
+trace_plot(df_posterior_3, 1, colores)
+
+density_plot(df_posterior_3, 1,  colores)
+```
+
+```{r graficos cadenas 8}
+#| label: fig-cadenas8
+#| fig-cap: "Cadenas de Markov para $\\delta$"
+#| fig-subcap: 
+#|   - "Traza"
+#|   - "Densidad"
+#| layout-ncol: 2
+
+trace_plot(df_posterior_3, 2, colores)
+
+density_plot(df_posterior_3, 2,  colores)
+```
+
+```{r graficos cadenas 9}
+#| label: fig-cadenas9
+#| fig-cap: "Cadenas de Markov para $\\sigma$"
+#| fig-subcap: 
+#|   - "Traza"
+#|   - "Densidad"
+#| layout-ncol: 2
+
+trace_plot(df_posterior_3, 3, colores)
+
+density_plot(df_posterior_3, 3,  colores)
+```
+
+
+Hasta ahora todo iba bien, las cadenas aún convergían con todos los $\hat R$ iguales a 1, pero al ver en la figura @fig-cadenas8 la densidad estimada del parámetro $\delta$ sospechaba que algo no encajaba. Sin embargo, decidió seguir adelante.
 
 ```{r prediccion 10am 3}
 # Grafico con intervalo de credibilidad
@@ -1009,7 +1022,7 @@ ggplot(data_y3) +
   geom_point(
     data = datos,mapping = aes(x = t, y = diff, color = Observacion), size = 1.5) +
   scale_color_manual(values = c("gold", "lightgreen", "dodgerblue")) +
-  labs(x = "Tiempo", y = expression(T(t)-T[amb]), color = "Hora | Temperatura") +
+  labs(x = "Tiempo", y = expression(T(t+delta)-T[amb]), color = "Hora | Temperatura") +
   scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7)) +
   theme(legend.position = "top")
 ```
@@ -1018,7 +1031,7 @@ ggplot(data_y3) +
 predictiva_post3 <- dec_a_hex(6.75 - quantile(df_posterior_3$d,probs = c(0.95, 0.05)))
 ```
 
-Con estos resultados, Sergio pudo haber fenecido entre las `r predictiva_post3[1]` y las `r predictiva_post3[2]`, un intervalo de tiempo mayor que el que se había obtenido anteriormente.
+Con estos resultados, Sergio pudo haber fenecido entre las `r predictiva_post3[1]` y las `r predictiva_post3[2]`, un intervalo de tiempo mayor que el que se había obtenido anteriormente con la misma credibilidad, calculado a partir de la distribución a posteriori de $\delta$, que se muestra en la figura @fig-cadenas8.
 
 "¡Lo que sospechaba!" dijo Guido, al asimilar que la última temperatura registrada de Sergio fue en la morgue, un lugar que tiende a ser frío para la preservación de los cadáveres, con lo que la temperatura del cuerpo de Sergio pudo haberse enfriado más rapidamente que en el lugar del hecho, donde recuerda que había una temperatura ambiente de 22 ºC.
 
@@ -1035,17 +1048,8 @@ Donde:
 
 - $I = \left\{\begin{matrix} 0 \ \ \ \text{si Sergio gozaba de un buen estado de salud} \ \ \ \ \ \\ 1 \ \ \ \text{si Sergio no gozaba de un buen estado de salud}  \end{matrix}\right.$
 
+# Conclusión
 
-# COSAS A AGREGAR
-
-- Interpretaciones a los gráficos de las bandas de credibilidad
-
-- Graficos de trazas y densidades de parametros
-
-
-
-
-trace plot | densidad (p/c parametro)
-
+Guido decide informarle a los policías que Sergio murió entre las `r predictiva_post2[1]` y las `r predictiva_post2[2]`, ignorando el último dato, dado que consideró que este empeoraba las estimaciones por haberse obtenido en condiciones diferentes a las del lugar del crimen. La policía forense agradece a Guido por su esfuerzo y se pondrán a investigar más detenidamente el caso con la información brindada. Guido antes de despedirse le recomendó a los policias verificar el [repositorio](https://github.com/Franco-Santini/Regresion_lineal_bayesiana) donde realizó toda su investigación.
 
 
