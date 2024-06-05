@@ -5,7 +5,6 @@ format:
     tbl-cap-location: bottom
 lang: es
 echo: FALSE
-# eval: FALSE
 message: FALSE
 warning: FALSE
 geometry:
@@ -107,7 +106,7 @@ Siguiendo los acontecimientos de la muerte de Sergio, una templada madrugada de 
 
 Los datos que la policía foresense propició a Guido son los siguientes:
 
-```{r}
+```{r Timeline}
 data <- data.frame(date = hm(c("05:33", "05 52", "06 45", "08 15", "09 55", "13 30", "16 10")),
                    event = c("Llamado de Lidia Benegas al 911", "Llega el móvil policial a la escena. Sergio es encontrado en el suelo sobre un charco de sangre", "La policía científica determinó que Sergio había fallecido, y presentaba una temperatura corporal de 32.8°C", "El cuerpo de Sergio es colocado en la bolsa de óbito para trasladarlo a la morgue. Su temperatura es de 30.5°C", "El cuerpo llega a la morgue", "Comienza la autopsia, la temperatura del cadaver es de 23.7°C", "Finaliza la autopsia. Se determina que Sergio falleció desangrado producto de una herida punzante en el bazo"))
 
@@ -132,7 +131,7 @@ adjusted_positions <- datos$lines + sign(datos$lines) * (2.5+text_sep)
 ```
 
 
-```{r, eval=FALSE}
+```{r Timeline 2, eval=FALSE}
 timeline <- ggplot(datos) + 
   # Base
   geom_segment(aes(y = 0-max(time)*0.1, yend = max(time)+max(time)*0.1, x = 0, xend = 0)) + # Linea central
@@ -195,7 +194,7 @@ $$
 Algunos valores posibles para la constante de enfriamiento r son:
 
 
-```{r}
+```{r grafico funcion temp amb 23 1}
 function_T <- function(t, t_amb, t_ini, r) {
  
   # t: Tiempo en horas
@@ -232,11 +231,8 @@ r2 <- function_T(t = seq(0,60, length.out = 1000),
 ```
 
 
-```{r}
+```{r grafico funcion temp amb 23 2}
 #| fig-cap: "Temperatura del cuerpo según tiempo post-mortem\nTemperatura ambiente: 23 °C"
-#| 
-#| 
-
 
 data.frame(t = rep(seq(0,60, length.out = 1000), times = 2),
            obs = c(r1,r2),
@@ -293,7 +289,7 @@ En principio, dado que el cuerpo fue encontrado con una temperatura corporal de 
 
 Con respecto al parámetro $\beta_1$, y considerando la hora a la que estima que murió Sergio y la temperatura a la que fue encontrado, observa lo siguiente.
 
-```{r}
+```{r grafico funcion temp amb 22 1}
 r1 <- function_T(t = seq(0,60, length.out = 1000),
            t_amb = 22,
            t_ini = 37,
@@ -312,7 +308,7 @@ r4 <- function_T(t = seq(0,60, length.out = 1000),
 ```
 
 
-```{r}
+```{r grafico funcion temp amb 22 2}
 #| fig-cap: "Temperatura del cuerpo según tiempo post-mortem\nTemperatura ambiente: 22 °C"
 data.frame(t = rep(seq(0,60, length.out = 1000), times = 3),
            obs = c(r1,r2,r4),
@@ -351,12 +347,14 @@ El objetivo de Guido es estimar la hora de la muerte y para hacerlo usará toda 
 
 ## Pruebas predictivas a priori
 
-```{r}
+```{r grafico bandas prior 1}
 load(file = "Stan_models/Resultados_modelos.RData")
 
 datos <- data.frame(
   t = c(0,1.5, 6.75),
-  diff = c(10.8,8.5, 1.7)
+  diff = c(10.8,8.5, 1.7),
+  Observacion = factor(c("06:45hs | 32.8 ºC", "08:15hs | 30.5 ºC", "13:30hs | 23.7 ºC"), 
+                       levels = c("06:45hs | 32.8 ºC", "08:15hs | 30.5 ºC", "13:30hs | 23.7 ºC"))
 )
 
 n <- 40000
@@ -433,7 +431,7 @@ data_y_pred <- data.frame(
 ```
 
 
-```{r}
+```{r grafico bandas prior 2}
 #| label: fig-bandas-prior
 #| fig-cap: "Distribución a Priori"
 #| fig-subcap: 
@@ -486,7 +484,7 @@ ggplot(data_y_pred) +
 
 Sumado a esto decide buscar un intervalo de tiempo en el que pueda decir con un 90% de certeza que Sergio murió dentro de ese rango horario.
 
-```{r}
+```{r resultados a priori}
 predictiva_prior <- dec_a_hex(6.75 - quantile(pred_prior$d,probs = c(0.95, 0.05)))
 
 ```
@@ -501,15 +499,15 @@ Después de que la computadora de bajos recursos del departamento de la Policía
 
 Los datos disponibles son los siguientes:
 
-```{r}
-datos |> 
+```{r datos tabla}
+datos[,1:2] |> 
   mutate(log_diff = round(log(diff), 3)) |> 
   `colnames<-`(c("$Tiempo$", "$Temp_{diff}$", "$ln(Temp_{diff})$")) |>
   knitr::kable(format = "pipe")
 ```
 
 
-```{r prediccion 7am}
+```{r datos stan 7am}
 stan_data <- list(
     N = nrow(datos[1,]), 
     t = as.array(datos[1,]$t),     
@@ -519,7 +517,7 @@ stan_data <- list(
 ```
 
 
-```{r, eval=FALSE}
+```{r modelo stan 7am, eval=FALSE}
 stan_model <- stan(
     file = "Stan_models/Model_1.stan",
     chains = 4,
@@ -531,14 +529,13 @@ stan_model <- stan(
 ```
 
 A Guido le remarcaban mucho en clases de Estadística Bayesiana la importancia de verificar la convergencia de las cadenas de Markov, en este caso obtenidas por el método NUTS (_No-U-Turn Sampler_), para los distintos párametros del modelo. Es por ello que para cada una de las estimaciones de los parámetros, presenta gráficos de densidad y de traza.
+\newpage
 
-```{r}
+```{r posterior 7am}
 source("Graficos.R")
 df_posterior <- as.data.frame(extract(stan_model))
 colores <- c("skyblue2", "gray34", "lightgreen", "pink")
 ```
-
-\newpage
 
 ```{r graficos cadenas 1}
 #| label: fig-cadenas1
@@ -566,9 +563,20 @@ trace_plot(df_posterior, 2, colores)
 density_plot(df_posterior, 2,  colores)
 ```
 
+```{r graficos cadenas 3}
+#| label: fig-cadenas3
+#| fig-cap: "Cadenas de Markov para $\\sigma$"
+#| fig-subcap: 
+#|   - "Traza"
+#|   - "Densidad"
+#| layout-ncol: 2
+
+trace_plot(df_posterior, 3, colores)
+
+density_plot(df_posterior, 3,  colores)
+```
 
 Con la información provista hasta las 7 de la mañana las cadenas de markov para cada uno de los parametros parecen converger a la misma distribucion a posteriori. Esto, además de haber obtenido un $\hat R = 1$ para todos los párametros le confirman a Guido que las muestras obtenidas son representativas.
-
 
 La curiosidad de Guido lo llevaba a querer visualizar como los datos afectan al prior, por lo que graficó bandas de credibilidad para el predictor lineal y para la diferencias de temperaturas.
 
@@ -660,16 +668,11 @@ ggplot(data_mu) +
     aes(t, y), 
     color = "firebrick") + 
   geom_point(
-    data = datos[1,],mapping = aes(x = t, y = log(diff)), size = 1) +
-  # geom_mark_ellipse(
-  #   data = datos[1,],
-  #   mapping = aes(x = t, y = log(diff)),
-  #   label = "Primera observación",
-  #   description = "06:45 | 32.8ºC", 
-  #   color = "red", 
-  #   expand = 0.01) +
-  labs(x = "Tiempo", y = expression(mu[i])) +
-  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7))
+    data = datos[1,],mapping = aes(x = t, y = log(diff), color = Observacion), size = 1.5) +
+  scale_color_manual(values = c("gold")) +
+  labs(x = "Tiempo", y = expression(mu[i]), color = "Hora | Temperatura") +
+  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7)) +
+  theme(legend.position = "top")
 
 
 ggplot(data_y) +
@@ -685,18 +688,11 @@ ggplot(data_y) +
     aes(t, y), 
     color = "firebrick") +
   geom_point(
-    data = datos[1,],mapping = aes(x = t, y = diff), size = 1) +
-  # geom_mark_ellipse(
-  #   data = datos[1,],
-  #   mapping = aes(x = t, y = log(diff)),
-  #   label = "Primera observación",
-  #   description = "06:45 | 32.8ºC", 
-  #   color = "red", 
-  #   expand = 0.01) +
-  labs(x = "Tiempo", y = expression(T(t)-T[amb])) +
-  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7))
-
-
+    data = datos[1,],mapping = aes(x = t, y = diff, color = Observacion), size = 1.5) +
+  scale_color_manual(values = c("gold")) +
+  labs(x = "Tiempo", y = expression(T(t)-T[amb]), color = "Hora | Temperatura") +
+  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7)) +
+  theme(legend.position = "top")
 
 ```
 
@@ -728,14 +724,50 @@ stan_model_2 <- stan(
 
 
 ```{r}
-mcmc_trace(stan_model_2)
-mcmc_dens_overlay(stan_model_2)
-
 df_posterior_2 <- as.data.frame(extract(stan_model_2))
 
 ```
 
-De igual forma que con un solo dato, las cadenas convergen a la misma distribución para todos los parámetros, pero estas son incluso más acotadas que antes.
+De igual forma que con un solo dato, las cadenas convergen a la misma distribución para todos los parámetros, pero estas son incluso más acotadas que antes. Esto se puede ver en los siguientes gráficos de traza y densidad para cada uno de los parámetros.
+
+```{r graficos cadenas 4}
+#| label: fig-cadenas4
+#| fig-cap: "Cadenas de Markov para $\\beta_1$"
+#| fig-subcap: 
+#|   - "Traza"
+#|   - "Densidad"
+#| layout-ncol: 2
+
+trace_plot(df_posterior_2, 1, colores)
+
+density_plot(df_posterior_2, 1,  colores)
+```
+
+```{r graficos cadenas 5}
+#| label: fig-cadenas5
+#| fig-cap: "Cadenas de Markov para $\\delta$"
+#| fig-subcap: 
+#|   - "Traza"
+#|   - "Densidad"
+#| layout-ncol: 2
+
+trace_plot(df_posterior_2, 2, colores)
+
+density_plot(df_posterior_2, 2,  colores)
+```
+
+```{r graficos cadenas 6}
+#| label: fig-cadenas6
+#| fig-cap: "Cadenas de Markov para $\\sigma$"
+#| fig-subcap: 
+#|   - "Traza"
+#|   - "Densidad"
+#| layout-ncol: 2
+
+trace_plot(df_posterior_2, 3, colores)
+
+density_plot(df_posterior_2, 3,  colores)
+```
 
 ```{r prediccion 10am 2}
 # Grafico con intervalo de credibilidad
@@ -811,16 +843,11 @@ ggplot(data_mu2) +
     aes(t, y), 
     color = "firebrick") + 
   geom_point(
-    data = datos[1:2,],mapping = aes(x = t, y = log(diff)), size = 1) +
-  # geom_mark_ellipse(
-  #   data = datos[1,],
-  #   mapping = aes(x = t, y = log(diff)),
-  #   label = "Primera observación",
-  #   description = "06:45 | 32.8ºC", 
-  #   color = "red", 
-  #   expand = 0.01) +
-  labs(x = "Tiempo", y = expression(mu[i])) +
-  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7))
+    data = datos[1:2,],mapping = aes(x = t, y = log(diff), color = Observacion), size = 1.5) +
+  scale_color_manual(values = c("gold", "lightgreen")) +
+  labs(x = "Tiempo", y = expression(mu[i]), color = "Hora | Temperatura") +
+  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7)) +
+  theme(legend.position = "top")
 
 
 ggplot(data_y2) +
@@ -836,17 +863,11 @@ ggplot(data_y2) +
     aes(t, y), 
     color = "firebrick") + 
   geom_point(
-    data = datos[1:2,],mapping = aes(x = t, y = diff), size = 1) +
-  # geom_mark_ellipse(
-  #   data = datos[1,],
-  #   mapping = aes(x = t, y = log(diff)),
-  #   label = "Primera observación",
-  #   description = "06:45 | 32.8ºC", 
-  #   color = "red", 
-  #   expand = 0.01) +
-  labs(x = "Tiempo", y = expression(T(t)-T[amb])) +
-  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7))
-
+    data = datos[1:2,],mapping = aes(x = t, y = diff, color = Observacion), size = 1.5) +
+  scale_color_manual(values = c("gold", "lightgreen")) +
+  labs(x = "Tiempo", y = expression(T(t)-T[amb]), color = "Hora | Temperatura") +
+  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7)) +
+  theme(legend.position = "top")
 ```
 
 ```{r}
@@ -855,6 +876,8 @@ predictiva_post2 <- dec_a_hex(6.75 - quantile(df_posterior_2$d,probs = c(0.95, 0
 
 
 Guido ahora concluye con una certeza del 90% que Sergio pereció entre las `r predictiva_post2[1]` y las `r predictiva_post2[2]`.
+
+\newpage
 
 Finalmente, decide hacer uso de toda la información disponible, aunque la última temperatura registrada del cuerpo le traía un mal presentimiento...
 
@@ -964,16 +987,11 @@ ggplot(data_mu3) +
     aes(t, y), 
     color = "firebrick") + 
   geom_point(
-    data = datos,mapping = aes(x = t, y = log(diff)), size = 1) +
-  # geom_mark_ellipse(
-  #   data = datos[1,],
-  #   mapping = aes(x = t, y = log(diff)),
-  #   label = "Primera observación",
-  #   description = "06:45 | 32.8ºC", 
-  #   color = "red", 
-  #   expand = 0.01) +
-  labs(x = "Tiempo", y = expression(mu[i])) +
-  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7))
+    data = datos,mapping = aes(x = t, y = log(diff), color = Observacion), size = 1.5) +
+  scale_color_manual(values = c("gold", "lightgreen", "dodgerblue")) +
+  labs(x = "Tiempo", y = expression(mu[i]), color = "Hora | Temperatura") +
+  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7)) +
+  theme(legend.position = "top")
 
 
 ggplot(data_y3) +
@@ -988,18 +1006,12 @@ ggplot(data_y3) +
   geom_line(
     aes(t, y), 
     color = "firebrick") + 
-    geom_point(
-    data = datos,mapping = aes(x = t, y = diff), size = 1) +
-  # geom_mark_ellipse(
-  #   data = datos[1,],
-  #   mapping = aes(x = t, y = log(diff)),
-  #   label = "Primera observación",
-  #   description = "06:45 | 32.8ºC", 
-  #   color = "red", 
-  #   expand = 0.01) +
-  labs(x = "Tiempo", y = expression(T(t)-T[amb])) +
-  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7))
-
+  geom_point(
+    data = datos,mapping = aes(x = t, y = diff, color = Observacion), size = 1.5) +
+  scale_color_manual(values = c("gold", "lightgreen", "dodgerblue")) +
+  labs(x = "Tiempo", y = expression(T(t)-T[amb]), color = "Hora | Temperatura") +
+  scale_x_continuous(breaks = seq(-4,7,1), limits = c(-4,7)) +
+  theme(legend.position = "top")
 ```
 
 ```{r}
