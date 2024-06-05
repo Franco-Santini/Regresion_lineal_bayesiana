@@ -533,12 +533,39 @@ stan_model <- stan(
 A Guido le remarcaban mucho en clases de Estadística Bayesiana la importancia de verificar la convergencia de las cadenas de Markov, en este caso obtenidas por el método NUTS (_No-U-Turn Sampler_), para los distintos párametros del modelo. Es por ello que para cada una de las estimaciones de los parámetros, presenta gráficos de densidad y de traza.
 
 ```{r}
-mcmc_dens_overlay(stan_model)
-mcmc_trace(stan_model)
-
+source("Graficos.R")
 df_posterior <- as.data.frame(extract(stan_model))
-
+colores <- c("skyblue2", "gray34", "lightgreen", "pink")
 ```
+
+\newpage
+
+```{r graficos cadenas 1}
+#| label: fig-cadenas1
+#| fig-cap: "Cadenas de Markov para $\\beta_1$"
+#| fig-subcap: 
+#|   - "Traza"
+#|   - "Densidad"
+#| layout-ncol: 2
+
+trace_plot(df_posterior, 1, colores)
+
+density_plot(df_posterior, 1,  colores)
+```
+
+```{r graficos cadenas 2}
+#| label: fig-cadenas2
+#| fig-cap: "Cadenas de Markov para $\\delta$"
+#| fig-subcap: 
+#|   - "Traza"
+#|   - "Densidad"
+#| layout-ncol: 2
+
+trace_plot(df_posterior, 2, colores)
+
+density_plot(df_posterior, 2,  colores)
+```
+
 
 Con la información provista hasta las 7 de la mañana las cadenas de markov para cada uno de los parametros parecen converger a la misma distribucion a posteriori. Esto, además de haber obtenido un $\hat R = 1$ para todos los párametros le confirman a Guido que las muestras obtenidas son representativas.
 
