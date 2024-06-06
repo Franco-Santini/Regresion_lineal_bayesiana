@@ -1030,7 +1030,7 @@ ggplot(data_y3) +
 ```{r}
 predictiva_post3 <- dec_a_hex(6.75 - quantile(df_posterior_3$d,probs = c(0.95, 0.05)))
 
-hora_más_probable <- dec_a_hex(6.75 - mean(df_posterior_2$d))
+hora_mas_probable <- dec_a_hex(6.75 - mean(df_posterior_2$d))
 ```
 
 Con estos resultados, Sergio pudo haber fenecido entre las `r predictiva_post3[1]` y las `r predictiva_post3[2]`, un intervalo de tiempo mayor que el que se había obtenido anteriormente con la misma credibilidad, calculado a partir de la distribución a posteriori de $\delta$, que se muestra en la @fig-cadenas8.
