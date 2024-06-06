@@ -102,7 +102,7 @@ dec_a_hex <- function(x){
 
 # Introducción
 
-Siguiendo los acontecimientos de la muerte de Sergio, una templada madrugada de miércoles en Salsipuedes, la policía forense busca determinar la hora de su muerte. El encargado de esto es Guido, un estudiante de estadística fascinado por poder al fin aplicar sus conocimientos estadísticos en un caso de criminalística.
+Siguiendo los acontecimientos de la muerte de Sergio, una templada madrugada de miércoles en Salsipuedes - Córdoba, la policía forense busca determinar la hora de su muerte. El encargado de esto es Guido, un estudiante de estadística fascinado por poder al fin aplicar sus conocimientos estadísticos en un caso de criminalística.
 
 Los datos que la policía foresense propició a Guido son los siguientes:
 
@@ -181,12 +181,12 @@ Se sabe que la temperatura de un cuerpo satisface la siguiente ley:
 $$
 \frac{d T(t)}{d t} = r[T_{amb}-T(t)]
 $$
-Donde $T_amb$ es la temperatura ambiente en donde se encuentra el cuerpo, en este caso 22 °C, $r$ es una constante que determina el ritmo de enfriamiento y $T(t)$ es la función que describe la temperatura del cadaver en función del tiempo después de la muerte.
+Donde $T_{amb}$ es la temperatura ambiente en donde se encuentra el cuerpo, en este caso 22 °C, $r$ es una constante que determina el ritmo de enfriamiento y $T(t)$ es la función que describe la temperatura del cadaver en función del tiempo después de la muerte.
 
 Una posible función $T(t)$ que satisface esta ecuación diferencial es la siguiente:
 
 \begin{align*}
-T(t) = T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt} \Rightarrow \frac{d T(t)}{d t} = -r(T_i - T_{\text{amb}}) \cdot e^{-rt} \\ r(T_{\text{amb}} - T_{\text{amb}})\cdot e^{-rt} - r(T_i - T_{\text{amb}}) \cdot e^{-rt} = r \{T_{\text{amb}} - T_{\text{amb}} - (T_i - T_{\text{amb}})e^{-rt} \} = \\ = r \{T_{\text{amb}} - \underbrace{[T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt}]}_{T(t)} \} = r [T_{\text{amb}} - T(t)]
+T(t) = T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt} \Rightarrow \frac{d T(t)}{d t} = -r(T_i - T_{\text{amb}}) \cdot e^{-rt} \Rightarrow \\ \Rightarrow r(T_{\text{amb}} - T_{\text{amb}})\cdot e^{-rt} - r(T_i - T_{\text{amb}}) \cdot e^{-rt} = r \{T_{\text{amb}} - T_{\text{amb}} - (T_i - T_{\text{amb}})e^{-rt} \} = \\ = r \{T_{\text{amb}} - \underbrace{[T_{\text{amb}} + (T_i - T_{\text{amb}})e^{-rt}]}_{T(t)} \} = r [T_{\text{amb}} - T(t)]
 \end{align*}
 
 Algunos valores posibles para la constante de enfriamiento r son:
@@ -230,7 +230,7 @@ r2 <- function_T(t = seq(0,60, length.out = 1000),
 
 
 ```{r grafico funcion temp amb 23 2}
-#| fig-cap: "Temperatura del cuerpo según tiempo post-mortem\nTemperatura ambiente: 23 °C"
+#| fig-cap: "Temperatura del cuerpo según tiempo post-mortem.\nTemperatura ambiente: 23 °C"
 #| out-width: "70%"
 
 data.frame(t = rep(seq(0,60, length.out = 1000), times = 2),
@@ -250,7 +250,7 @@ Al ser su primer caso oficial, Guido se sintió un poco desconcertado por no sab
 Con el objetivo de finalmente, después de tanto esfuerzo, estimar la hora de la muerte de Sergio, Guido decide utilizar un enfoque Bayesiano, planteando el siguiente modelo lineal.
 
 $$
-T(t) - T_{\text{amb}} = T_{\text{diff}} e^{-rt} \Rightarrow \\ ln(T(t) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-rt}) = \underbrace{ln(T_{\text{diff}})}_{\beta_0} - \underbrace{r}_{\beta_1}t = \beta_0 - \beta_1 \cdot t
+T(t) - T_{\text{amb}} = T_{\text{diff}} e^{-rt} \Rightarrow \\ ln(T(t) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-rt}) \Rightarrow \underbrace{ln(T_{\text{diff}})}_{\beta_0} - \underbrace{r}_{\beta_1}t = \beta_0 - \beta_1 \cdot t
 $$
 
 Donde $\beta_0$ representa el logaritmo natural de la diferencia entre la temperatura inicial del cuerpo y la temperatura ambiente y $\beta_1$ es el cambio esperado en el logaritmo de la diferencia de temperaturas por cada hora.
@@ -259,10 +259,10 @@ Una transformación posible para este modelo, la cuál permite interpretar a $t$
 
 $$
 T(t+\delta) - T_{\text{amb}} = T_{\text{diff}} e^{-r(t+\delta)} \Rightarrow \\ 
-ln(T(t+\delta) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-r(t+\delta)}) = \\ 
-\underbrace{ln(T_{\text{diff}})}_{\beta_0} - \underbrace{r}_{\beta_1}(t+\delta) = \beta_0 - \beta_1 \cdot (t+\delta)
+\Rightarrow ln(T(t+\delta) - T_{\text{amb}}) = ln(T_{\text{diff}} e^{-r(t+\delta)}) \Rightarrow \\ 
+\Rightarrow \underbrace{ln(T_{\text{diff}})}_{\beta_0} - \underbrace{r}_{\beta_1}(t+\delta) = \beta_0 - \beta_1 \cdot (t+\delta)
 $$
-El modelo que se usa para estimar la hora de muerte de Sergio resulta entonces:
+El modelo que se usa para estimar la hora de muerte de Sergio resulta:
 
 $$
 ln(T(t+\delta) - T_{\text{amb}}) = \beta_0 - \beta_1 \cdot (t+\delta) \ \ \ \ (1)
@@ -278,7 +278,7 @@ Guido recuerda haber mirado el pronóstico del tiempo el día de la muerte de Se
 
 
 $$
-ln(T(0)-T_{amb}) = \beta_0 - \beta_1 \cdot (0) =
+ln(T(0)-T_{amb}) = \beta_0 - \beta_1 \cdot (0) \Rightarrow
 \beta_0 = ln(37-22) =ln(15)=  2.7081
 $$
 
@@ -286,7 +286,7 @@ Al ser un enfoque bayesiano, Guido debe pensar una distribución a priori para l
 
 En principio, dado que el cuerpo fue encontrado con una temperatura corporal de 32.8 °C, y sabiendo que Sergio murió desangrado, lo cual acelera considerablemente el descenso de la temperatura, cree que debe haber muerto hace aproximadamente 2 horas, aunque no está para nada seguro, por lo que utilizará una distribución uniforme, que irá entre 1 hora y media y 2 horas y media. 
 
-Con respecto al parámetro $\beta_1$, y considerando la hora a la que estima que murió Sergio y la temperatura a la que fue encontrado, observa lo siguiente.
+Con respecto al parámetro $\beta_1$, considerando la hora a la que estima que murió Sergio y la temperatura a la que fue encontrado, observa lo siguiente.
 
 ```{r grafico funcion temp amb 22 1}
 r1 <- function_T(t = seq(0,60, length.out = 1000),
@@ -308,7 +308,7 @@ r4 <- function_T(t = seq(0,60, length.out = 1000),
 
 
 ```{r grafico funcion temp amb 22 2}
-#| fig-cap: "Temperatura del cuerpo según tiempo post-mortem\nTemperatura ambiente: 22 °C"
+#| fig-cap: "Temperatura del cuerpo según tiempo post-mortem.\nTemperatura ambiente: 22 °C"
 #| out-width: "70%"
 
 data.frame(t = rep(seq(0,60, length.out = 1000), times = 3),
@@ -326,12 +326,12 @@ data.frame(t = rep(seq(0,60, length.out = 1000), times = 3),
 
 En base a esto, tomará valores similares a los graficados para la distribución de $\beta_1$, considerando una distribución normal.
 
-Con respecto al parámetro $\sigma$, cree que un termómetro puede fallar a lo sumo en 2 °C, por lo que postula una distribución media normal, dado que $\sigma$ no puede tomar valores negativos con desvío 0.2. 
+Con respecto al parámetro $\sigma$, cree que un termómetro puede fallar a lo sumo en 2 °C, por lo que postula una distribución media normal, dado que $\sigma$ no puede tomar valores negativos, con un desvío de 0.25. 
 
 De manera un poco más formal, el modelo planteado por Guido es el siguiente, suponiendo que los parámetros, a priori, son independientes.
 
 \begin{align*}
-ln(Y)/\mu_i,\ \sigma \sim N(\mu_i,\ \sigma) \\ \mu_i=\beta_0 + \beta_1\cdot (t+\delta) \\ \beta_0 =2.7081 \\ \beta_1 \sim N^+(0.16,\ 0.075) \\ \delta \sim U(1.5, \ 2.5) \\ \sigma \sim N^+(0,\ 0.2 )
+ln(Y)/\mu_i,\ \sigma \sim N(\mu_i,\ \sigma) \\ \mu_i=\beta_0 - \beta_1\cdot (t+\delta) \\ \beta_0 =2.7081 \\ \beta_1 \sim N^+(0.16,\ 0.02) \\ \delta \sim U(1.5, \ 2.5) \\ \sigma \sim N^+(0,\ 0.25)
 \end{align*}
 
 
@@ -469,13 +469,11 @@ predictiva_prior <- dec_a_hex(6.75 - quantile(pred_prior$d,probs = c(0.95, 0.05)
 
 ```
 
-A priori Guido concluye con una credibilidad del 90% que Sergio murió entre las `r predictiva_prior[1]` y las `r predictiva_prior[2]`, por lo que las distribuciones a priori que planteó parecen tener sentido.
+A priori, Guido concluye con una credibilidad del 90% que Sergio murió entre las `r predictiva_prior[1]` y las `r predictiva_prior[2]`, por lo que las distribuciones a priori que planteó parecen tener sentido.
 
 ## Pruebas predictivas a Posteriori
 
 Ahora sí, finalmente Guido utilizará los datos provistos para estimar la hora de la muerte, pero con el objetivo de desafiarse a sí mismo decide hacerlo de manera secuencial, para ver como los datos van afectando sus estimaciones.
-
-Después de que la computadora de bajos recursos del departamento de la Policía Científica estuviera encendida durante días, Guido consiguió los siguientes resultados.
 
 Los datos disponibles son los siguientes:
 
@@ -507,6 +505,8 @@ stan_model <- stan(
     seed = 90502
     )
 ```
+
+Después de que la computadora de bajos recursos del departamento de la Policía Científica estuviera encendida durante días, Guido consiguió correr los modelos en Stan.
 
 A Guido le remarcaban mucho en clases de Estadística Bayesiana la importancia de verificar la convergencia de las cadenas de Markov, en este caso obtenidas por el método NUTS (_No-U-Turn Sampler_), para los distintos párametros del modelo. Es por ello que para cada una de las estimaciones de los parámetros, presenta gráficos de densidad y de traza.
 \newpage
@@ -556,7 +556,7 @@ trace_plot(df_posterior, 3, colores)
 density_plot(df_posterior, 3,  colores)
 ```
 
-Con la información provista hasta las 7 de la mañana las cadenas de markov para cada uno de los parametros parecen converger a la misma distribucion a posteriori. Esto, además de haber obtenido un $\hat R = 1$ para todos los párametros le confirman a Guido que las muestras obtenidas son representativas.
+Con la información provista hasta las 7 de la mañana, las cadenas de Markov para cada uno de los parametros parecen converger a la misma distribucion a posteriori. Esto, además de haber obtenido un $\hat R = 1$ para todos los párametros, le confirman a Guido que las muestras obtenidas son representativas.
 
 La curiosidad de Guido lo llevaba a querer visualizar como los datos afectan al prior, por lo que graficó bandas de credibilidad para el predictor lineal y para la diferencias de temperaturas.
 
@@ -681,9 +681,9 @@ predictiva_post1 <- dec_a_hex(6.75 - quantile(df_posterior$d,probs = c(0.95, 0.0
 ```
 
 
-Guido observa que esta primera observación parece acotar levemente el intervalo de tiempo en el que puede decir con una buena certeza que Sergio murió. Ahora Guido puede decir con la misma credibilidad de antes que Sergio falleció entre las `r predictiva_post1[1]` y las `r predictiva_post1[2]`, calculado a partir de la distribución a posteriori de $\delta$, que se muestra en la figura @fig-cadenas2. Esto no parece mucho, pero le sirve a Guido para saber que va por buen camino, lo cual lo motiva a seguir.
+Guido observa que esta primera observación parece acotar levemente el intervalo de tiempo en el que puede decir con una buena certeza que Sergio murió. Ahora él, puede decir con la misma credibilidad de antes que Sergio falleció entre las `r predictiva_post1[1]` y las `r predictiva_post1[2]`, calculado a partir de la distribución a posteriori de $\delta$, que se muestra en la @fig-cadenas2. Esto no parece mucho, pero le sirve a Guido para saber que va por buen camino, lo cuál lo motiva a seguir.
 
-Guido procede a seguir añadiendo datos a su modelo, con lo que usa la información disponible hasta las 10hs obteniendo los siguientes resultados. 
+Guido procede a seguir añadiendo datos a su modelo, con lo que usa la información disponible hasta las 10hs. 
 
 ```{r prediccion 10am 1, eval=FALSE}
 stan_data_2 <- list(
@@ -855,7 +855,7 @@ predictiva_post2 <- dec_a_hex(6.75 - quantile(df_posterior_2$d,probs = c(0.95, 0
 ```
 
 
-Guido ahora concluye con una certeza del 90% que Sergio pereció entre las `r predictiva_post2[1]` y las `r predictiva_post2[2]`, calculado a partir de la distribución a posteriori de $\delta$, que se muestra en la figura @fig-cadenas5.
+Guido ahora concluye con una certeza del 90% que Sergio pereció entre las `r predictiva_post2[1]` y las `r predictiva_post2[2]`, calculado a partir de la distribución a posteriori de $\delta$, que se muestra en la @fig-cadenas5.
 
 Finalmente, decide hacer uso de toda la información disponible, aunque la última temperatura registrada del cuerpo le traía un mal presentimiento...
 
@@ -924,7 +924,7 @@ density_plot(df_posterior_3, 3,  colores)
 ```
 
 
-Hasta ahora todo iba bien, las cadenas aún convergían con todos los $\hat R$ iguales a 1, pero al ver en la figura @fig-cadenas8 la densidad estimada del parámetro $\delta$ sospechaba que algo no encajaba. Sin embargo, decidió seguir adelante.
+Hasta el momento, todo iba bien, las cadenas aún convergían con todos los $\hat R$ iguales a 1, pero al ver en la @fig-cadenas8 la densidad estimada del parámetro $\delta$ sospechaba que algo no encajaba. Sin embargo, decidió seguir adelante.
 
 ```{r prediccion 10am 3}
 # Grafico con intervalo de credibilidad
@@ -1029,13 +1029,15 @@ ggplot(data_y3) +
 
 ```{r}
 predictiva_post3 <- dec_a_hex(6.75 - quantile(df_posterior_3$d,probs = c(0.95, 0.05)))
+
+hora_más_probable <- dec_a_hex(6.75 - mean(df_posterior_2$d))
 ```
 
-Con estos resultados, Sergio pudo haber fenecido entre las `r predictiva_post3[1]` y las `r predictiva_post3[2]`, un intervalo de tiempo mayor que el que se había obtenido anteriormente con la misma credibilidad, calculado a partir de la distribución a posteriori de $\delta$, que se muestra en la figura @fig-cadenas8.
+Con estos resultados, Sergio pudo haber fenecido entre las `r predictiva_post3[1]` y las `r predictiva_post3[2]`, un intervalo de tiempo mayor que el que se había obtenido anteriormente con la misma credibilidad, calculado a partir de la distribución a posteriori de $\delta$, que se muestra en la @fig-cadenas8.
 
 "¡Lo que sospechaba!" dijo Guido, al asimilar que la última temperatura registrada de Sergio fue en la morgue, un lugar que tiende a ser frío para la preservación de los cadáveres, con lo que la temperatura del cuerpo de Sergio pudo haberse enfriado más rapidamente que en el lugar del hecho, donde recuerda que había una temperatura ambiente de 22 ºC.
 
-Pero esto no era todo, Guido pensó, ¿Qué hubiera pasado si Sergio no gozaba de un buen estado de salud?. Por lo que si tuviese información que indique que Sergio no gozaba de buena salud al momento de fallecer, esto podría modificar su creencia a Priori ya que la velocidad de enfriamiento se retarda en casos de enfermedades febriles, personas con obesidad e intoxicaciones por nicotina, rodenticidas, entre otros. También la perdida de calor del cuerpo puede acelerarse en personas con bajo peso, enfermedades crónicas e intoxicadas por fósforo, arsénico y alcohol^[[La Gaceta Internacional de Ciencias Forenses](https://www.uv.es/gicf/3R1_Pen%CC%83a_GICF_31.pdf)].
+Pero esto no era todo, pensó Guido, ¿Qué hubiera pasado si Sergio no gozaba de un buen estado de salud?. Por lo que, si tuviese información que indique que Sergio no gozaba de buena salud al momento de fallecer, esto podría modificar su creencia a priori, ya que la velocidad de enfriamiento se retarda en casos de enfermedades febriles, personas con obesidad e intoxicaciones por nicotina, rodenticidas, entre otros. También la perdida de calor del cuerpo puede acelerarse en personas con bajo peso, enfermedades crónicas e intoxicadas por fósforo, arsénico y alcohol^[[La Gaceta Internacional de Ciencias Forenses](https://www.uv.es/gicf/3R1_Pen%CC%83a_GICF_31.pdf)].
 
 Una posible solución que pensó, podría ser agregar una variable que indique si la persona gozaba de un buen estado de salud, junto a un parámetro $\beta_2$ que modifique la pendiente original. Resultando el modelo:
 
@@ -1050,6 +1052,6 @@ Donde:
 
 # Conclusión
 
-Guido decide informarle a los policías que Sergio murió entre las `r predictiva_post2[1]` y las `r predictiva_post2[2]`, ignorando el último dato, dado que consideró que este empeoraba las estimaciones por haberse obtenido en condiciones diferentes a las del lugar del crimen. La policía forense agradece a Guido por su esfuerzo y se pondrán a investigar más detenidamente el caso con la información brindada. Guido antes de despedirse le recomendó a los policias verificar el [repositorio](https://github.com/Franco-Santini/Regresion_lineal_bayesiana) donde realizó toda su investigación.
+Guido decide informarle a los policías que Sergio murió entre las `r predictiva_post2[1]` y las `r predictiva_post2[2]`, considerando a las `r hora_mas_probable` como la hora más probable de la muerte, ignorando el último dato, dado que consideró que este empeoraba las estimaciones por haberse obtenido en condiciones diferentes a las del lugar del crimen. La policía forense agradece a Guido por su esfuerzo y se pondrán a investigar más detenidamente el caso con la información brindada. Guido antes de despedirse le recomendó a los policias verificar el [repositorio](https://github.com/Franco-Santini/Regresion_lineal_bayesiana) donde realizó toda su investigación.
 
 
